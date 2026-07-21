@@ -15,4 +15,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleException(Exception ex){
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
     }
+    @ExceptionHandler
+    public ResponseEntity<String> handleUserNotFound(UserNotFoundException ex){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+    @ExceptionHandler
+    public  ResponseEntity<String> handleInvalidCredentialsException(InvalidCredentialsException ex){
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    }
 }
