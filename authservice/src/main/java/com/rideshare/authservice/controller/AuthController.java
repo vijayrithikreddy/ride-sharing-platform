@@ -1,5 +1,7 @@
 package com.rideshare.authservice.controller;
 
+import com.rideshare.authservice.dto.LoginRequestDto;
+import com.rideshare.authservice.dto.LoginResponseDto;
 import com.rideshare.authservice.dto.SignUpRequestDto;
 import com.rideshare.authservice.dto.SignUpResponseDto;
 import com.rideshare.authservice.service.AuthService;
@@ -18,8 +20,13 @@ public class AuthController {
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
-    @PostMapping()
+    @PostMapping("/signup")
     ResponseEntity<SignUpResponseDto> signUp(@RequestBody SignUpRequestDto signUpRequestDto){
       return ResponseEntity.status(HttpStatus.CREATED).body(authService.signUp(signUpRequestDto));
+    }
+
+    @PostMapping("/login")
+    ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto){
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.login(loginRequestDto));
     }
 }
