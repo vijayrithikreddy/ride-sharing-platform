@@ -1,15 +1,13 @@
 spring:
   application:
-    name: AUTH-SERVICE
+    name: USER-SERVICE
+
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/rideshare?createDatabaseIfNotExist=true
     username: root
     password: root
-  data:
-    redis:
-      host: localhost
-      port: 6379
+
   jpa:
     hibernate:
       ddl-auto: create
@@ -17,16 +15,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
 
 server:
-  port: 8081
-
-jwt:
-  validity:
-    accessToken: 3600000
-    refreshToken: 2592000000
-
-  secret: jwt-secret-code
+  port: 8082
 
 eureka:
   client:
@@ -36,7 +28,3 @@ eureka:
     fetch-registry: true
   instance:
     prefer-ip-address: true
-
-
-
-
