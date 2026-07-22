@@ -1,11 +1,9 @@
 package com.rideshare.authservice.service;
 
-import com.rideshare.authservice.dto.LoginRequestDto;
-import com.rideshare.authservice.dto.LoginResponseDto;
-import com.rideshare.authservice.dto.SignUpRequestDto;
-import com.rideshare.authservice.dto.SignUpResponseDto;
+import com.rideshare.authservice.dto.*;
 import com.rideshare.authservice.entity.AuthUser;
 import com.rideshare.authservice.exception.*;
+import com.rideshare.authservice.feign.UserProfileClient;
 import com.rideshare.authservice.model.PendingUser;
 import com.rideshare.authservice.repository.AuthRepository;
 import com.rideshare.authservice.util.JwtUtil;
@@ -29,6 +27,7 @@ public class AuthServiceImpl implements AuthService{
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RedisTemplate<String,PendingUser> redisTemplate;
+    private final UserProfileClient userProfileClient;
 
     @Override
     public String signUp(SignUpRequestDto signUpRequestDto) {
@@ -78,8 +77,11 @@ public class AuthServiceImpl implements AuthService{
             throw new OtpExpiredException("Otp has Expired .Please Register");
         if (pendingUser.getOtp().equals(otp)){
             AuthUser user = modelMapper.map(pendingUser, AuthUser.class);
-            AuthUser savedUser = authRepository.save(user);
+            AuthUser savedUser = authRepository.save(user);//return the id too
+            CreateEmptyProfileRequestDto createEmptyProfileRequestDto = new CreateEmptyProfileRequestDto();
+            createEmptyProfileRequestDto.setAuthUserId(savedUser.getId());
             redisTemplate.delete("signup:" + email);
+            userProfileClient.createEmptyUserProfile(createEmptyProfileRequestDto);
             return modelMapper.map(savedUser,SignUpResponseDto.class);
         } else {
             throw new InvalidOtpException("Otp Invalid . Please Enter Correct Otp");
