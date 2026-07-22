@@ -23,4 +23,24 @@ public class GlobalExceptionHandler {
     public  ResponseEntity<String> handleInvalidCredentialsException(InvalidCredentialsException ex){
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
     }
+    @ExceptionHandler
+    public ResponseEntity<String> handleInvalidOtpException(InvalidOtpException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<String> handleOtpAlreadySentException(OtpAlreadySentException ex) {
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<String> handleOtpExpiredException(OtpExpiredException ex) {
+        return ResponseEntity
+                .status(HttpStatus.GONE)
+                .body(ex.getMessage());
+    }
 }
