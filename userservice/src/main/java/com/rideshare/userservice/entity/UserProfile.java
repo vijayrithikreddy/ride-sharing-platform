@@ -39,6 +39,14 @@ public class UserProfile {
 
     private String profilePictureUrl;
     private String bio;
+
+    @OneToOne(
+            mappedBy = "userProfile",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private Vehicle vehicle;
+
     private boolean profileCompleted;
 
     private LocalDateTime createdAt;
