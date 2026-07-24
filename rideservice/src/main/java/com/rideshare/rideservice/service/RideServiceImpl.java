@@ -1,12 +1,11 @@
 package com.rideshare.rideservice.service;
 
-import com.rideshare.rideservice.dto.CreateRideRequestDto;
+import com.rideshare.rideservice.dto.CreateRideDto;
 import com.rideshare.rideservice.dto.RideResponseDto;
-import com.rideshare.rideservice.dto.UpdateRideRequestDto;
+import com.rideshare.rideservice.dto.UpdateRideDto;
 import com.rideshare.rideservice.entity.Ride;
 import com.rideshare.rideservice.enums.RideStatus;
 import com.rideshare.rideservice.exception.InvalidRideException;
-import com.rideshare.rideservice.exception.InvalidRideStateException;
 import com.rideshare.rideservice.exception.RideAlreadyExistsException;
 import com.rideshare.rideservice.exception.RideNotFoundException;
 import com.rideshare.rideservice.repository.RideRepository;
@@ -25,7 +24,7 @@ public class RideServiceImpl implements RideService{
     private final ModelMapper modelMapper;
 
     @Override
-    public RideResponseDto publishRide(CreateRideRequestDto rideRequestDto, UUID authUserId) {
+    public RideResponseDto publishRide(CreateRideDto rideRequestDto, UUID authUserId) {
         if (rideRepository.existsByDriverAuthUserIdAndStatusIn(
                 authUserId,
                 List.of(
@@ -54,14 +53,14 @@ public class RideServiceImpl implements RideService{
     }
 
     @Override
-    public RideResponseDto updateRide(UpdateRideRequestDto updateRideRequestDto, UUID authUserId) {
+    public RideResponseDto updateRide(UpdateRideDto updateRideDto, UUID authUserId) {
 
         Ride ride = rideRepository.findByDriverAuthUserIdAndStatus(authUserId,RideStatus.AVAILABLE)
                 .orElseThrow(() ->
                         new RideNotFoundException("Ride not found."));
 
 
-        modelMapper.map(updateRideRequestDto, ride);
+        modelMapper.map(updateRideDto, ride);
 
         Ride updatedRide = rideRepository.save(ride);
 
