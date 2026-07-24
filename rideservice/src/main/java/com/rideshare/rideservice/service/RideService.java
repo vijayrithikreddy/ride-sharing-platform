@@ -1,16 +1,16 @@
 package com.rideshare.rideservice.service;
 
-import com.rideshare.rideservice.dto.CreateRideRequestDto;
+import com.rideshare.rideservice.dto.CreateRideDto;
 import com.rideshare.rideservice.dto.RideResponseDto;
-import com.rideshare.rideservice.dto.UpdateRideRequestDto;
+import com.rideshare.rideservice.dto.UpdateRideDto;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface RideService {
-    RideResponseDto publishRide(CreateRideRequestDto rideRequestDto, UUID authUserId);
+    RideResponseDto publishRide(CreateRideDto rideRequestDto, UUID authUserId);
 
-    RideResponseDto updateRide(UpdateRideRequestDto request, UUID authUserId);
+    RideResponseDto updateRide(UpdateRideDto request, UUID authUserId);
 
     void cancelRide(UUID authUserId);
 
