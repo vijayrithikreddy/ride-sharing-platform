@@ -12,8 +12,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class VehicleResponseDto {
 
-    private Integer id;
-
     private String vehicleNumber;
 
     private VehicleType vehicleType;

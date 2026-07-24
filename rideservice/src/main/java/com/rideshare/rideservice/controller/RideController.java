@@ -1,9 +1,9 @@
 package com.rideshare.rideservice.controller;
 
 
-import com.rideshare.rideservice.dto.CreateRideRequestDto;
+import com.rideshare.rideservice.dto.CreateRideDto;
 import com.rideshare.rideservice.dto.RideResponseDto;
-import com.rideshare.rideservice.dto.UpdateRideRequestDto;
+import com.rideshare.rideservice.dto.UpdateRideDto;
 import com.rideshare.rideservice.service.RideService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,13 +20,13 @@ public class RideController {
     private final RideService rideService;
 
     @PostMapping
-    ResponseEntity<RideResponseDto> publishRide(@RequestParam UUID authUserId, @RequestBody CreateRideRequestDto rideRequestDto){
+    ResponseEntity<RideResponseDto> publishRide(@RequestParam UUID authUserId, @RequestBody CreateRideDto rideRequestDto){
         return ResponseEntity.ok(rideService.publishRide(rideRequestDto,authUserId));
     }
 
     @PutMapping
     public ResponseEntity<RideResponseDto> updateRide(
-            @Valid @RequestBody UpdateRideRequestDto request,
+            @Valid @RequestBody UpdateRideDto request,
             @RequestParam UUID authUserId) {
 
         return ResponseEntity.ok(

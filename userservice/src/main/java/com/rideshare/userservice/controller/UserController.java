@@ -32,7 +32,7 @@ public class UserController {
         );
     }
 
-    @GetMapping("/{authUserid}")
+    @GetMapping("/{id}")
     public  ResponseEntity<UserProfileResponseDto> getMyProfile(@PathVariable UUID id){
         return ResponseEntity.ok(userService.getUserProfileById(id));
     }
