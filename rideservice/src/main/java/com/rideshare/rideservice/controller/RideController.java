@@ -1,10 +1,9 @@
 package com.rideshare.rideservice.controller;
 
 
-import com.rideshare.rideservice.dto.CreateRideDto;
-import com.rideshare.rideservice.dto.RideResponseDto;
-import com.rideshare.rideservice.dto.UpdateRideDto;
+import com.rideshare.rideservice.dto.*;
 import com.rideshare.rideservice.service.RideService;
+import com.rideshare.rideservice.service.RouteMatchingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +17,7 @@ import java.util.UUID;
 @RequestMapping("api/rides")
 public class RideController {
     private final RideService rideService;
+    private final RouteMatchingService routeMatchingService;
 
     @PostMapping
     ResponseEntity<RideResponseDto> publishRide(@RequestParam UUID authUserId, @RequestBody CreateRideDto rideRequestDto){
@@ -67,5 +67,10 @@ public class RideController {
             @RequestParam UUID authUserId) {
 
         return ResponseEntity.ok(rideService.completeRide(authUserId));
+    }
+    @PostMapping("/search")
+    ResponseEntity<List<RideSearchResponseDto>> searchRides(SearchRideRequestDto searchRideRequestDto){
+        return ResponseEntity.ok(routeMatchingService.findMatchingRides(searchRideRequestDto));
+
     }
 }
