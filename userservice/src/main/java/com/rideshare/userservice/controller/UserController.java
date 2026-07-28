@@ -22,9 +22,9 @@ public class UserController {
         return ResponseEntity.ok(userService.createEmptyUserProfile(createEmptyProfileRequestDto));
     }
 
-    @PutMapping("/{authUserId}")
+    @PutMapping
     public ResponseEntity<UserProfileResponseDto> updateUserProfile(
-            @PathVariable UUID authUserId,
+            @RequestHeader("X-User-Id") UUID authUserId,
             @RequestBody @Valid UpdateUserProfileRequestDto request) {
 
         return ResponseEntity.ok(
