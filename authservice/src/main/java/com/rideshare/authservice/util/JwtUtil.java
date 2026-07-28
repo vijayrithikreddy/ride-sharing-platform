@@ -23,6 +23,7 @@ public class JwtUtil {
 
         return JWT.create()
                 .withSubject(user.getEmail())
+                .withClaim("user_id",user.getId().toString())
                 .withClaim("role",user.getRole().toString())
                 .withClaim("issued_date",new Date())
                 .withIssuer("RideShare")
@@ -34,6 +35,7 @@ public class JwtUtil {
 
         return JWT.create()
                 .withSubject(user.getEmail())
+                .withClaim("user_id",user.getId().toString())
                 .withClaim("role",user.getRole().toString())
                 .withClaim("issued_date",new Date())
                 .withIssuer("RideShare")
