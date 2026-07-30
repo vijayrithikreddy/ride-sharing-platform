@@ -4,6 +4,7 @@ package com.rideshare.userservice.service;
 import com.rideshare.userservice.dto.CreateEmptyProfileRequestDto;
 import com.rideshare.userservice.dto.UpdateUserProfileRequestDto;
 import com.rideshare.userservice.dto.UserProfileResponseDto;
+import com.rideshare.userservice.dto.UserSummaryDto;
 import com.rideshare.userservice.entity.UserProfile;
 import com.rideshare.userservice.exception.ProfileAlreadyCreatedException;
 import com.rideshare.userservice.exception.UserProfileNotFoundException;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -60,6 +62,30 @@ public class UserServiceImpl implements UserService {
     public UserProfileResponseDto getUserProfileById(UUID id) {
         UserProfile userProfile = userProfileRepository.findByAuthUserId(id).orElseThrow(() -> new UserProfileNotFoundException("Profile Not found"));
         return modelMapper.map(userProfile,UserProfileResponseDto.class);
+    }
+    @Override
+    public List<UserSummaryDto> getUserSummaries(List<UUID> authUserIds) {
+
+        List<UserProfile> userProfiles =
+                userProfileRepository.findByAuthUserIdIn(authUserIds);
+
+        return userProfiles.stream()
+                .map(profile -> {
+
+                    UserSummaryDto dto =
+                            modelMapper.map(profile, UserSummaryDto.class);
+
+                    if (profile.getVehicle() != null) {
+
+                        dto.setVehicle(
+                                modelMapper.map(profile.getVehicle(), VehicleSummaryDto.class));
+
+                    }
+
+                    return dto;
+
+                })
+                .toList();
     }
 
 }
