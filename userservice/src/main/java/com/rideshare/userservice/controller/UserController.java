@@ -3,12 +3,14 @@ package com.rideshare.userservice.controller;
 import com.rideshare.userservice.dto.CreateEmptyProfileRequestDto;
 import com.rideshare.userservice.dto.UpdateUserProfileRequestDto;
 import com.rideshare.userservice.dto.UserProfileResponseDto;
+import com.rideshare.userservice.dto.UserSummaryDto;
 import com.rideshare.userservice.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,9 +24,9 @@ public class UserController {
         return ResponseEntity.ok(userService.createEmptyUserProfile(createEmptyProfileRequestDto));
     }
 
-    @PutMapping("/{authUserId}")
+    @PutMapping
     public ResponseEntity<UserProfileResponseDto> updateUserProfile(
-            @PathVariable UUID authUserId,
+            @RequestHeader("X-User-Id") UUID authUserId,
             @RequestBody @Valid UpdateUserProfileRequestDto request) {
 
         return ResponseEntity.ok(
@@ -35,5 +37,11 @@ public class UserController {
     @GetMapping("/{id}")
     public  ResponseEntity<UserProfileResponseDto> getMyProfile(@PathVariable UUID id){
         return ResponseEntity.ok(userService.getUserProfileById(id));
+    }
+    @PostMapping("/summaries")
+    public ResponseEntity<List<UserSummaryDto>> getUserSummaries(
+            @RequestBody List<UUID> authUserIds) {
+
+        return ResponseEntity.ok(userService.getUserSummaries(authUserIds));
     }
 }
