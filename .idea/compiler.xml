@@ -13,7 +13,7 @@
         </processorPath>
         <module name="userservice" />
       </profile>
-      <profile name="Annotation profile for apigatewayservice" enabled="true">
+      <profile name="Annotation profile for rideservice" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />

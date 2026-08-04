@@ -1,23 +1,25 @@
 package com.rideshare.userservice.controller;
 
-import com.rideshare.userservice.dto.CreateEmptyProfileRequestDto;
-import com.rideshare.userservice.dto.UpdateUserProfileRequestDto;
-import com.rideshare.userservice.dto.UserProfileResponseDto;
-import com.rideshare.userservice.dto.UserSummaryDto;
+import com.rideshare.userservice.dto.*;
+import com.rideshare.userservice.service.ImageService;
 import com.rideshare.userservice.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
+
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/userprofiles")
 public class UserController {
     private final UserService userService;
+    private final ImageService imageService;
 
     @PostMapping
     ResponseEntity<String> createUserProfile(@RequestBody CreateEmptyProfileRequestDto createEmptyProfileRequestDto){
@@ -43,5 +45,22 @@ public class UserController {
             @RequestBody List<UUID> authUserIds) {
 
         return ResponseEntity.ok(userService.getUserSummaries(authUserIds));
+    }
+    @PostMapping(value = "/profile-picture", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ImageUploadResponse> upload(@RequestParam MultipartFile image){
+        ImageUploadResponse response = imageService.uploadProfilePicture(image);
+        return ResponseEntity.ok(response);
+    }
+    @PatchMapping("/mode")
+    public ResponseEntity<UserProfileResponseDto> updateUserMode(
+            @RequestHeader("X-User-Id") UUID authUserId,
+            @RequestBody @Valid UpdateUserModeRequestDto request) {
+
+        return ResponseEntity.ok(userService.updateUserMode(authUserId, request));
+    }
+
+    @GetMapping("/profile-status")
+    public ResponseEntity<Boolean> getProfileStatus(@RequestHeader("X-User-Id") UUID authUserId){
+        return ResponseEntity.ok(userService.getProfileStatus(authUserId));
     }
 }
