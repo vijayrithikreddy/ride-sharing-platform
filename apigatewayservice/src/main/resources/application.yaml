@@ -4,8 +4,24 @@ spring:
 
   cloud:
     gateway:
-      routes:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
 
+      routes:
         - id: auth-service
           uri: lb://AUTH-SERVICE
           predicates:
@@ -21,7 +37,6 @@ spring:
           predicates:
             - Path=/api/rides/**,/api/ride-requests/**
 
-
 server:
   port: 8080
 
@@ -31,7 +46,9 @@ eureka:
       defaultZone: http://localhost:8761/eureka
     register-with-eureka: true
     fetch-registry: true
+
   instance:
     prefer-ip-address: true
+
 jwt:
   secret: jwt-secret-code

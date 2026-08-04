@@ -14,6 +14,7 @@ import com.rideshare.rideservice.repository.RideRepository;
 import com.rideshare.rideservice.util.GeoUtils;
 import com.rideshare.rideservice.util.PolylineUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
@@ -24,9 +25,10 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RouteMatchingServiceImpl implements RouteMatchingService {
 
-    private static final double SOURCE_RADIUS_METERS = 1500.0;
+    private static final double SOURCE_RADIUS_METERS = 5000.0;
     private static final double MATCH_DISTANCE_THRESHOLD = 100.0;
     private static final double MATCH_THRESHOLD_PERCENT = 50.0;
 
@@ -46,6 +48,7 @@ public class RouteMatchingServiceImpl implements RouteMatchingService {
                         departureTime.minusMinutes(30),
                         departureTime.plusMinutes(30)
                 );
+        log.info("{} " ,availableRides.size());
 
         // Step 2 : Pickup location filter
         List<Ride> candidateRides = availableRides.stream()
@@ -53,12 +56,14 @@ public class RouteMatchingServiceImpl implements RouteMatchingService {
                         ride.getSource(),
                         request.getSource()))
                 .toList();
+        log.info("{} " ,candidateRides.size());
 
         // Step 3 : Route matching
         List<RideMatch> matchedRides =
                 getMatchingRides(
                         candidateRides,
                         request.getPassengerEncodedPolyline());
+        log.info("{} " ,matchedRides.size());
 
         if (matchedRides.isEmpty()) {
             return Collections.emptyList();
@@ -128,18 +133,28 @@ public class RouteMatchingServiceImpl implements RouteMatchingService {
 
         List<LatLng> passengerRoute =
                 PolylineUtils.decode(passengerEncodedPolyline);
+        log.info("Passenger Route Points: {}", passengerRoute.size());
+        log.info("Passenger First Point: {}", passengerRoute.get(0));
+
+
 
         List<RideMatch> matchedRides = new ArrayList<>();
+
 
         for (Ride ride : candidateRides) {
 
             List<LatLng> riderRoute =
                     PolylineUtils.decode(ride.getEncodedPolyline());
+            log.info("Rider Route Points: {}", riderRoute.size());
+            log.info("Rider First Point: {}", riderRoute.get(0));
 
             double matchPercentage =
                     calculateMatchPercentage(
                             passengerRoute,
                             riderRoute);
+            log.info("Ride {} -> Match {}%",
+                    ride.getRideId(),
+                    matchPercentage);
 
             if (matchPercentage >= MATCH_THRESHOLD_PERCENT) {
 
@@ -164,15 +179,12 @@ public class RouteMatchingServiceImpl implements RouteMatchingService {
         }
 
         int matchedPoints = 0;
-        int riderIndex = 0;
 
         for (LatLng passengerPoint : passengerRoute) {
 
             boolean matched = false;
 
-            while (riderIndex < riderRoute.size()) {
-
-                LatLng riderPoint = riderRoute.get(riderIndex);
+            for (LatLng riderPoint : riderRoute) {
 
                 double distance = GeoUtils.haversineDistance(
                         passengerPoint.lat,
@@ -182,25 +194,18 @@ public class RouteMatchingServiceImpl implements RouteMatchingService {
                 );
 
                 if (distance <= MATCH_DISTANCE_THRESHOLD) {
-
-                    matchedPoints++;
-
                     matched = true;
-
-                    // Move forward after a successful match
-                    riderIndex++;
-
                     break;
                 }
-
-                riderIndex++;
             }
 
-            if (!matched && riderIndex >= riderRoute.size()) {
-                break;
+            if (matched) {
+                matchedPoints++;
             }
         }
 
-        return (matchedPoints * 100.0) / passengerRoute.size();
+        log.info("Matched Points = {}", matchedPoints);
+
+        return matchedPoints * 100.0 / passengerRoute.size();
     }
 }

@@ -28,3 +28,9 @@ eureka:
     fetch-registry: true
   instance:
     prefer-ip-address: true
+
+
+
+app:
+  upload:
+    profile-picture-path: D:/ride-sharing-platform/userservice/uploads/profile-pictures
