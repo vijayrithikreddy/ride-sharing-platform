@@ -15,6 +15,12 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.CONFLICT)
                 .body(ex.getMessage());
     }
+    @ExceptionHandler(InvalidFileException.class)
+    public ResponseEntity<String> handleInvalidFileException(InvalidFileException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ex.getMessage());
+    }
     @ExceptionHandler(UserProfileNotFoundException.class)
     public ResponseEntity<String> handleUserProfileNotFoundException(UserProfileNotFoundException ex) {
         return ResponseEntity

@@ -32,6 +32,10 @@ public class AuthorizationConfig {
                     "POST:/api/userprofiles/summaries",
                     List.of("ROLE_USER")
             ),
+            Map.entry(
+                    "PATCH:/api/userprofiles",
+                    List.of("ROLE_USER")
+            ),
 
             // ==========================
             // VEHICLE

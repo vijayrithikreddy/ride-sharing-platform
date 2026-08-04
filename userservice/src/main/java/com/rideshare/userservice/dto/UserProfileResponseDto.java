@@ -2,6 +2,7 @@ package com.rideshare.userservice.dto;
 
 import com.rideshare.userservice.enums.Gender;
 import com.rideshare.userservice.enums.Occupation;
+import com.rideshare.userservice.enums.UserMode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,6 +31,7 @@ public class UserProfileResponseDto {
     private String organization;
 
     private String profilePictureUrl;
+    private UserMode userMode;
 
     private String bio;
 

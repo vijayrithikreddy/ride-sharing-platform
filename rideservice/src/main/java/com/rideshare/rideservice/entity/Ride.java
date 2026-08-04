@@ -37,7 +37,7 @@ public class Ride {
     private Location destination;
 
     @Lob
-    @Column(nullable = false)
+    @Column(columnDefinition = "LONGTEXT",nullable = false)
     private String encodedPolyline;
 
     @Column(nullable = false)

@@ -1,10 +1,7 @@
 package com.rideshare.userservice.service;
 
 
-import com.rideshare.userservice.dto.CreateEmptyProfileRequestDto;
-import com.rideshare.userservice.dto.UpdateUserProfileRequestDto;
-import com.rideshare.userservice.dto.UserProfileResponseDto;
-import com.rideshare.userservice.dto.UserSummaryDto;
+import com.rideshare.userservice.dto.*;
 import com.rideshare.userservice.entity.UserProfile;
 import com.rideshare.userservice.exception.ProfileAlreadyCreatedException;
 import com.rideshare.userservice.exception.UserProfileNotFoundException;
@@ -86,6 +83,32 @@ public class UserServiceImpl implements UserService {
 
                 })
                 .toList();
+    }
+    @Override
+    public UserProfileResponseDto updateUserMode(
+            UUID authUserId,
+            UpdateUserModeRequestDto request) {
+
+        UserProfile profile = userProfileRepository
+                .findByAuthUserId(authUserId)
+                .orElseThrow(() ->
+                        new UserProfileNotFoundException("Profile not found"));
+
+        profile.setUserMode(request.getUserMode());
+
+        UserProfile saved = userProfileRepository.save(profile);
+
+        return modelMapper.map(saved, UserProfileResponseDto.class);
+    }
+
+    public boolean getProfileStatus(UUID authUserId) {
+
+        UserProfile profile = userProfileRepository
+                .findByAuthUserId(authUserId)
+                .orElseThrow(() ->
+                        new UserProfileNotFoundException("Profile not found"));
+
+        return profile.isProfileCompleted();
     }
 
 }
