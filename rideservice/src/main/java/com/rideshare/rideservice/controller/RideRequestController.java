@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+
 @RestController
 @RequestMapping("/api/ride-requests")
 @RequiredArgsConstructor
@@ -20,7 +21,7 @@ public class RideRequestController {
     @PostMapping("/request")
     public ResponseEntity<RideRequestResponseDto> requestRide(
             @RequestParam Integer rideId,
-            @RequestParam UUID passengerAuthUserId) {
+            @RequestHeader("X-User-Id") UUID passengerAuthUserId) {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(rideRequestService.requestRide(rideId, passengerAuthUserId));
     }
@@ -28,7 +29,7 @@ public class RideRequestController {
     @PutMapping("/accept")
     public ResponseEntity<RideRequestResponseDto> acceptRideRequest(
             @RequestParam Integer requestId,
-            @RequestParam UUID driverAuthUserId) {
+            @RequestHeader("X-User-Id") UUID driverAuthUserId) {
 
         return ResponseEntity.ok(rideRequestService.acceptRideRequest(requestId, driverAuthUserId));
     }
@@ -36,7 +37,7 @@ public class RideRequestController {
     @PutMapping("/reject")
     public ResponseEntity<RideRequestResponseDto> rejectRideRequest(
             @RequestParam Integer requestId,
-            @RequestParam UUID driverAuthUserId) {
+            @RequestHeader("X-User-Id") UUID driverAuthUserId) {
 
         return ResponseEntity.ok(rideRequestService.rejectRideRequest(requestId, driverAuthUserId));
     }
@@ -44,7 +45,7 @@ public class RideRequestController {
     @PutMapping("/cancel")
     public ResponseEntity<Void> cancelRideRequest(
             @RequestParam Integer requestId,
-            @RequestParam UUID passengerAuthUserId) {
+            @RequestHeader("X-User-Id") UUID passengerAuthUserId) {
 
         rideRequestService.cancelRideRequest(requestId, passengerAuthUserId);
 
@@ -53,7 +54,7 @@ public class RideRequestController {
 
     @GetMapping("/myrequests")
     public ResponseEntity<List<RideRequestResponseDto>> getMyRideRequests(
-            @RequestParam UUID passengerAuthUserId) {
+            @RequestHeader("X-User-Id") UUID passengerAuthUserId) {
 
         return ResponseEntity.ok(rideRequestService.getMyRideRequests(passengerAuthUserId)
         );
@@ -61,7 +62,7 @@ public class RideRequestController {
 
     @GetMapping("/myriderequests")
     public ResponseEntity<List<RideRequestResponseDto>> getPendingRideRequests(
-            @RequestParam UUID driverAuthUserId) {
+            @RequestHeader("X-User-Id") UUID driverAuthUserId) {
 
         return ResponseEntity.ok(rideRequestService.getRideRequests(driverAuthUserId));
     }
