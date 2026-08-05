@@ -1,11 +1,13 @@
 package com.rideshare.rideservice.service;
 
-import com.rideshare.rideservice.dto.RideRequestResponseDto;
+import com.rideshare.rideservice.dto.*;
 import com.rideshare.rideservice.entity.Ride;
 import com.rideshare.rideservice.entity.RideRequest;
 import com.rideshare.rideservice.enums.RideRequestStatus;
 import com.rideshare.rideservice.enums.RideStatus;
 import com.rideshare.rideservice.exception.*;
+import com.rideshare.rideservice.feign.UserServiceClient;
+import com.rideshare.rideservice.model.Location;
 import com.rideshare.rideservice.repository.RideRepository;
 import com.rideshare.rideservice.repository.RideRequestRepository;
 import com.rideshare.rideservice.websocket.RideEventPublisher;
@@ -15,7 +17,12 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
@@ -24,12 +31,16 @@ public class RideRequestServiceImpl implements RideRequestService{
     private final ModelMapper modelMapper;
     private final RideRepository rideRepository;
     private final RideEventPublisher rideEventPublisher;
+    private final UserServiceClient userServiceClient;
 
     @Override
-    public RideRequestResponseDto requestRide(Integer rideId, UUID passengerAuthUserId) {
+    public RideRequestResponseDto requestRide(
+            CreateRideRequestDto request,
+            UUID passengerAuthUserId) {
 
-        Ride ride = rideRepository.findById(rideId)
-                .orElseThrow(() -> new RideNotFoundException("Ride not found."));
+        Ride ride = rideRepository.findById(request.getRideId())
+                .orElseThrow(() ->
+                        new RideNotFoundException("Ride not found."));
 
         if (ride.getStatus() != RideStatus.AVAILABLE) {
             throw new RideNotAvailableException("Ride is not available.");
@@ -40,13 +51,39 @@ public class RideRequestServiceImpl implements RideRequestService{
                     "You cannot request your own ride.");
         }
 
-        if (rideRequestRepository.existsByRideIdAndPassengerAuthUserId(rideId, passengerAuthUserId)) {
-            throw new RideRequestAlreadyExistsException("Ride request already exists.");
+        if (rideRequestRepository.existsByRideIdAndPassengerAuthUserId(
+                request.getRideId(),
+                passengerAuthUserId)) {
+
+            throw new RideRequestAlreadyExistsException(
+                    "Ride request already exists.");
         }
 
         RideRequest rideRequest = RideRequest.builder()
-                .rideId(rideId)
+
+                .rideId(request.getRideId())
+
                 .passengerAuthUserId(passengerAuthUserId)
+
+                .source(
+                        modelMapper.map(
+                                request.getSource(),
+                                Location.class))
+
+                .destination(
+                        modelMapper.map(
+                                request.getDestination(),
+                                Location.class))
+
+                .passengerEncodedPolyline(
+                        request.getPassengerEncodedPolyline())
+
+                .departureTime(
+                        request.getDepartureTime())
+
+                .matchPercentage(
+                        request.getMatchPercentage())
+
                 .build();
 
         RideRequest savedRideRequest =
@@ -64,6 +101,11 @@ public class RideRequestServiceImpl implements RideRequestService{
         );
 
         return response;
+        RideRequest saved =
+                rideRequestRepository.save(rideRequest);
+
+        return modelMapper.map(saved,
+                RideRequestResponseDto.class);
     }
 
     @Override
@@ -160,17 +202,95 @@ public class RideRequestServiceImpl implements RideRequestService{
     @Override
     public List<RideRequestResponseDto> getRideRequests(UUID driverAuthUserId) {
 
-        Ride ride = rideRepository.findByDriverAuthUserIdAndStatus(driverAuthUserId, RideStatus.AVAILABLE)
+        Ride ride = rideRepository
+                .findByDriverAuthUserIdAndStatus(
+                        driverAuthUserId,
+                        RideStatus.AVAILABLE)
                 .orElseThrow(() ->
                         new RideNotFoundException("No active ride found."));
 
-        return rideRequestRepository
-                .findByRideIdAndStatus(
+        List<RideRequest> requests =
+                rideRequestRepository.findByRideIdAndStatus(
                         ride.getRideId(),
-                        RideRequestStatus.PENDING)
-                .stream()
+                        RideRequestStatus.PENDING);
+
+        List<UUID> passengerIds = requests.stream()
+                .map(RideRequest::getPassengerAuthUserId)
+                .toList();
+
+        List<UserSummaryDto> users =
+                userServiceClient.getUserSummaries(passengerIds);
+
+        Map<UUID, UserSummaryDto> userMap = users.stream()
+                .collect(Collectors.toMap(
+                        UserSummaryDto::getAuthUserId,
+                        Function.identity()
+                ));
+
+        return requests.stream()
+                .map(request -> {
+
+                    UserSummaryDto passenger =
+                            userMap.get(request.getPassengerAuthUserId());
+
+                    if (passenger == null) {
+                        throw new UserProfileNotFoundException(
+                                "Passenger profile not found."
+                        );
+                    }
+
+                    return RideRequestResponseDto.builder()
+
+                            .requestId(request.getRequestId())
+                            .rideId(request.getRideId())
+                            .status(request.getStatus())
+                            .requestedAt(request.getRequestedAt())
+
+                            .matchPercentage(request.getMatchPercentage())
+
+                            .source(modelMapper.map(
+                                    request.getSource(),
+                                    LocationDto.class))
+
+                            .destination(modelMapper.map(
+                                    request.getDestination(),
+                                    LocationDto.class))
+
+                            .passengerEncodedPolyline(
+                                    request.getPassengerEncodedPolyline())
+
+                            .departureTime(
+                                    request.getDepartureTime())
+
+                            .passengerProfile(
+                                    PassengerProfileDto.builder()
+                                            .authUserId(passenger.getAuthUserId())
+                                            .firstName(passenger.getFirstName())
+                                            .lastName(passenger.getLastName())
+                                            .profilePictureUrl(passenger.getProfilePictureUrl())
+                                            .build()
+                            )
+
+                            .build();
+
+                })
+                .toList();
+    }
+    @Override
+    public List<RideRequestResponseDto> getActiveRideRequests(
+            UUID passengerAuthUserId) {
+
+        List<RideRequest> requests =
+                rideRequestRepository.findByPassengerAuthUserIdAndStatus(
+                        passengerAuthUserId,RideRequestStatus.PENDING);
+
+        return requests.stream()
                 .map(request ->
-                        modelMapper.map(request, RideRequestResponseDto.class))
+                        modelMapper.map(
+                                request,
+                                RideRequestResponseDto.class
+                        )
+                )
                 .toList();
     }
 }

@@ -67,4 +67,12 @@ public class RideRequestController {
 
         return ResponseEntity.ok(rideRequestService.getRideRequests(driverAuthUserId));
     }
+    @GetMapping("/active")
+    public ResponseEntity<List<RideRequestResponseDto>> getActiveRideRequests(
+            @RequestHeader("X-User-Id") UUID passengerAuthUserId) {
+
+        return ResponseEntity.ok(
+                rideRequestService.getActiveRideRequests(passengerAuthUserId)
+        );
+    }
 }

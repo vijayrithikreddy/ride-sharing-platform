@@ -18,4 +18,5 @@ public interface RideRequestService {
     List<RideRequestResponseDto> getMyRideRequests(UUID passengerAuthUserId);
 
     List<RideRequestResponseDto> getRideRequests(UUID driverAuthUserId);
+    List<RideRequestResponseDto> getActiveRideRequests(UUID passengerAuthUserId);
 }

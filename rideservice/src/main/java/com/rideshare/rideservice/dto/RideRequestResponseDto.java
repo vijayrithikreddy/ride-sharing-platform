@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,9 +16,13 @@ public class RideRequestResponseDto {
 
     private Integer requestId;
 
+    private Integer rideId;
+
     private RideRequestStatus status;
 
     private LocalDateTime requestedAt;
+
+    private Double matchPercentage;
 
     private PassengerProfileDto passengerProfile;
 
@@ -25,7 +30,7 @@ public class RideRequestResponseDto {
 
     private LocationDto destination;
 
-    private LocalDateTime departureTime;
+    private String passengerEncodedPolyline;
 
-    private Double ridePrice;
+    private LocalDateTime departureTime;
 }

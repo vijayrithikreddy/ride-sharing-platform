@@ -21,6 +21,7 @@ public class RideResponseDto {
     private LocationDto destination;
 
     private LocalDateTime departureTime;
+    private String encodedPolyline;
 
     private Double price;
 
