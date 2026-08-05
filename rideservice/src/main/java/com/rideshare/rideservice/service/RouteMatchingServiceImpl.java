@@ -104,6 +104,7 @@ public class RouteMatchingServiceImpl implements RouteMatchingService {
                                     match.getRide().getDestination(),
                                     LocationDto.class))
                             .departureTime(match.getRide().getDepartureTime())
+                            .encodedPolyline(match.getRide().getEncodedPolyline())
                             .price(match.getRide().getRidePrice())
                             .matchPercentage(match.getMatchPercentage())
                             .driverProfile(driver)

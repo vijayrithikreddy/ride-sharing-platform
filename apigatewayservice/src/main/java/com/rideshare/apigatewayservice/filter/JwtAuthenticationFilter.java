@@ -26,6 +26,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private final AuthorizationConfig authorizationConfig;
     private static final List<String> PUBLIC_APIS = List.of(
             // Authentication
+            "/ws",
             "/api/auth/signup",
             "/api/auth/verifyOtp",
             "/api/auth/resend-otp",

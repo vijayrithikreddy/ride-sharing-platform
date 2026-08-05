@@ -11,21 +11,17 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RideSearchResponseDto {
+public class CreateRideRequestDto {
 
     private Integer rideId;
-
-    private Double matchPercentage;
 
     private LocationDto source;
 
     private LocationDto destination;
 
+    private String passengerEncodedPolyline;
+
+    private Double matchPercentage;
+
     private LocalDateTime departureTime;
-    private String encodedPolyline;
-
-    private Double price;
-    private UserSummaryDto driverProfile;
-
-
 }
