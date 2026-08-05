@@ -149,4 +149,7 @@ public class RideServiceImpl implements RideService{
 
         return modelMapper.map(updatedRide, RideResponseDto.class);
     }
+    public boolean hasActiveRide(UUID authUserId){
+        return rideRepository.existsByDriverAuthUserIdAndStatusIn(authUserId,List.of(RideStatus.AVAILABLE,RideStatus.BOOKED));
+    }
 }

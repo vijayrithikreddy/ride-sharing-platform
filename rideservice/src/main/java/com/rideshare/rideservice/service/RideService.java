@@ -25,5 +25,6 @@ public interface RideService {
     RideResponseDto startRide(UUID authUserId);
 
     RideResponseDto completeRide(UUID authUserId);
+    boolean hasActiveRide(UUID authUserId);
 
 }
