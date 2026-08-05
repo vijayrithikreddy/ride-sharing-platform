@@ -50,6 +50,11 @@ public class RideController {
 
         return ResponseEntity.ok(rideService.getMyActiveRide(authUserId));
     }
+    @GetMapping("/isactive")
+    public ResponseEntity<Boolean> hasActiveRide(
+            @RequestHeader("X-User-Id") UUID authUserId) {
+        return ResponseEntity.ok(rideService.hasActiveRide(authUserId));
+    }
 
     @GetMapping("/history")
     public ResponseEntity<List<RideResponseDto>> getRideHistory(

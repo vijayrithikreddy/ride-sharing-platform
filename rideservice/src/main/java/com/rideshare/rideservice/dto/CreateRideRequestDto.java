@@ -24,4 +24,6 @@ public class CreateRideRequestDto {
     private Double matchPercentage;
 
     private LocalDateTime departureTime;
+
+    private Double ridePrice;
 }

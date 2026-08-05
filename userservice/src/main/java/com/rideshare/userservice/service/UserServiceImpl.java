@@ -110,5 +110,14 @@ public class UserServiceImpl implements UserService {
 
         return profile.isProfileCompleted();
     }
+    @Override
+    public PassengerProfileDto getPassengerProfile(UUID authUserId) {
+
+        UserProfile profile = userProfileRepository.findByAuthUserId(authUserId)
+                .orElseThrow(() ->
+                        new UserProfileNotFoundException("User not found"));
+
+        return modelMapper.map(profile, PassengerProfileDto.class);
+    }
 
 }

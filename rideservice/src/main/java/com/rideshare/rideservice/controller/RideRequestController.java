@@ -67,4 +67,5 @@ public class RideRequestController {
 
         return ResponseEntity.ok(rideRequestService.getRideRequests(driverAuthUserId));
     }
+
 }

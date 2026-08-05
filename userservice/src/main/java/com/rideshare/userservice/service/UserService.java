@@ -12,4 +12,5 @@ public interface UserService {
     List<UserSummaryDto> getUserSummaries(List<UUID> authUserIds);
     UserProfileResponseDto updateUserMode(UUID authUserId, UpdateUserModeRequestDto request);
     boolean getProfileStatus(UUID authUserId);
+    PassengerProfileDto getPassengerProfile(UUID authUserId);
 }
