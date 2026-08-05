@@ -16,6 +16,12 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.CONFLICT)
                 .body(ex.getMessage());
     }
+    @ExceptionHandler(UserProfileNotFoundException.class)
+    public ResponseEntity<String> handleUserProfileNotFoundException(UserProfileNotFoundException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
 
     @ExceptionHandler(InvalidRideException.class)
     public ResponseEntity<String> handleInvalidRideException(

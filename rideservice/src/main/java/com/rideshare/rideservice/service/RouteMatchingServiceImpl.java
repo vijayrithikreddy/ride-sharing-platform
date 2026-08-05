@@ -103,6 +103,7 @@ public class RouteMatchingServiceImpl implements RouteMatchingService {
                             .destination(modelMapper.map(
                                     match.getRide().getDestination(),
                                     LocationDto.class))
+                            .encodedPolyline(match.getRide().getEncodedPolyline())
                             .departureTime(match.getRide().getDepartureTime())
                             .price(match.getRide().getRidePrice())
                             .matchPercentage(match.getMatchPercentage())

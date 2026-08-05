@@ -74,4 +74,9 @@ public class RideController {
         return ResponseEntity.ok(routeMatchingService.findMatchingRides(searchRideRequestDto));
 
     }
+    @GetMapping("/isactive")
+    public ResponseEntity<Boolean> hasActiveRide(
+            @RequestHeader("X-User-Id") UUID authUserId) {
+        return ResponseEntity.ok(rideService.hasActiveRide(authUserId));
+    }
 }
