@@ -8,6 +8,7 @@ import com.rideshare.rideservice.enums.RideStatus;
 import com.rideshare.rideservice.exception.*;
 import com.rideshare.rideservice.repository.RideRepository;
 import com.rideshare.rideservice.repository.RideRequestRepository;
+import com.rideshare.rideservice.websocket.RideEventPublisher;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -22,6 +23,7 @@ public class RideRequestServiceImpl implements RideRequestService{
     private final RideRequestRepository rideRequestRepository;
     private final ModelMapper modelMapper;
     private final RideRepository rideRepository;
+    private final RideEventPublisher rideEventPublisher;
 
     @Override
     public RideRequestResponseDto requestRide(Integer rideId, UUID passengerAuthUserId) {
@@ -47,9 +49,21 @@ public class RideRequestServiceImpl implements RideRequestService{
                 .passengerAuthUserId(passengerAuthUserId)
                 .build();
 
-        RideRequest savedRideRequest = rideRequestRepository.save(rideRequest);
+        RideRequest savedRideRequest =
+                rideRequestRepository.save(rideRequest);
 
-        return modelMapper.map(savedRideRequest, RideRequestResponseDto.class);
+        RideRequestResponseDto response =
+                modelMapper.map(
+                        savedRideRequest,
+                        RideRequestResponseDto.class
+                );
+
+        rideEventPublisher.publishNewRideRequest(
+                ride.getRideId(),
+                response
+        );
+
+        return response;
     }
 
     @Override

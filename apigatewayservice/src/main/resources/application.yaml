@@ -4,6 +4,10 @@ spring:
 
   cloud:
     gateway:
+
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+
       globalcors:
         add-to-simple-url-handler-mapping: true
         cors-configurations:
@@ -20,7 +24,6 @@ spring:
             allowedHeaders:
               - "*"
             allowCredentials: true
-
       routes:
         - id: auth-service
           uri: lb://AUTH-SERVICE
@@ -36,6 +39,11 @@ spring:
           uri: lb://RIDE-SERVICE
           predicates:
             - Path=/api/rides/**,/api/ride-requests/**
+
+        - id: ride-service-websocket
+          uri: lb:ws://RIDE-SERVICE
+          predicates:
+            - Path=/ws/**
 
 server:
   port: 8080
