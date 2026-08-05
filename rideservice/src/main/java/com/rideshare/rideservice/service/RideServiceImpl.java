@@ -52,6 +52,7 @@ public class RideServiceImpl implements RideService{
         return modelMapper.map(savedRide, RideResponseDto.class);
     }
 
+
     @Override
     public RideResponseDto updateRide(UpdateRideDto updateRideDto, UUID authUserId) {
 
@@ -148,5 +149,9 @@ public class RideServiceImpl implements RideService{
         Ride updatedRide = rideRepository.save(ride);
 
         return modelMapper.map(updatedRide, RideResponseDto.class);
+    }
+    @Override
+    public boolean hasActiveRide(UUID authUserId){
+        return rideRepository.existsByDriverAuthUserIdAndStatusIn(authUserId,List.of(RideStatus.AVAILABLE,RideStatus.BOOKED));
     }
 }

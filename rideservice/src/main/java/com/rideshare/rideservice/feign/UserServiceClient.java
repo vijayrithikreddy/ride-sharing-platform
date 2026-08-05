@@ -1,7 +1,10 @@
 package com.rideshare.rideservice.feign;
 
+import com.rideshare.rideservice.dto.PassengerProfileDto;
 import com.rideshare.rideservice.dto.UserSummaryDto;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -13,4 +16,9 @@ public interface UserServiceClient {
 
     @PostMapping("/api/userprofiles/summaries")
     List<UserSummaryDto> getUserSummaries(@RequestBody List<UUID> authUserIds);
+
+    @GetMapping("/api/userprofiles/{authUserId}/passenger-profile")
+    PassengerProfileDto getPassengerProfile(
+            @PathVariable UUID authUserId
+    );
 }

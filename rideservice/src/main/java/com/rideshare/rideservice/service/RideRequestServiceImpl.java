@@ -1,11 +1,15 @@
 package com.rideshare.rideservice.service;
 
+import com.rideshare.rideservice.dto.CreateRideRequestDto;
+import com.rideshare.rideservice.dto.PassengerProfileDto;
 import com.rideshare.rideservice.dto.RideRequestResponseDto;
 import com.rideshare.rideservice.entity.Ride;
 import com.rideshare.rideservice.entity.RideRequest;
 import com.rideshare.rideservice.enums.RideRequestStatus;
 import com.rideshare.rideservice.enums.RideStatus;
 import com.rideshare.rideservice.exception.*;
+import com.rideshare.rideservice.feign.UserServiceClient;
+import com.rideshare.rideservice.model.Location;
 import com.rideshare.rideservice.repository.RideRepository;
 import com.rideshare.rideservice.repository.RideRequestRepository;
 import com.rideshare.rideservice.websocket.RideEventPublisher;
@@ -24,11 +28,12 @@ public class RideRequestServiceImpl implements RideRequestService{
     private final ModelMapper modelMapper;
     private final RideRepository rideRepository;
     private final RideEventPublisher rideEventPublisher;
+    private final UserServiceClient userServiceClient;
 
     @Override
-    public RideRequestResponseDto requestRide(Integer rideId, UUID passengerAuthUserId) {
+    public RideRequestResponseDto requestRide(CreateRideRequestDto request, UUID passengerAuthUserId) {
 
-        Ride ride = rideRepository.findById(rideId)
+        Ride ride = rideRepository.findById(request.getRideId())
                 .orElseThrow(() -> new RideNotFoundException("Ride not found."));
 
         if (ride.getStatus() != RideStatus.AVAILABLE) {
@@ -40,23 +45,49 @@ public class RideRequestServiceImpl implements RideRequestService{
                     "You cannot request your own ride.");
         }
 
-        if (rideRequestRepository.existsByRideIdAndPassengerAuthUserId(rideId, passengerAuthUserId)) {
+        if (rideRequestRepository.existsByRideIdAndPassengerAuthUserId(request.getRideId(), passengerAuthUserId)) {
             throw new RideRequestAlreadyExistsException("Ride request already exists.");
         }
 
         RideRequest rideRequest = RideRequest.builder()
-                .rideId(rideId)
+
+                .rideId(request.getRideId())
+
                 .passengerAuthUserId(passengerAuthUserId)
+
+                .source(
+                        modelMapper.map(
+                                request.getSource(),
+                                Location.class))
+
+                .destination(
+                        modelMapper.map(
+                                request.getDestination(),
+                                Location.class))
+
+                .passengerEncodedPolyline(
+                        request.getPassengerEncodedPolyline())
+
+                .departureTime(
+                        request.getDepartureTime())
+                .ridePrice(request.getRidePrice())
+
+                .matchPercentage(
+                        request.getMatchPercentage())
+
                 .build();
+
 
         RideRequest savedRideRequest =
                 rideRequestRepository.save(rideRequest);
+        PassengerProfileDto passengerProfile = userServiceClient.getPassengerProfile(passengerAuthUserId);
 
         RideRequestResponseDto response =
                 modelMapper.map(
                         savedRideRequest,
                         RideRequestResponseDto.class
                 );
+        response.setPassengerProfile(passengerProfile);
 
         rideEventPublisher.publishNewRideRequest(
                 ride.getRideId(),

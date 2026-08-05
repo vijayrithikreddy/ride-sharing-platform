@@ -63,4 +63,12 @@ public class UserController {
     public ResponseEntity<Boolean> getProfileStatus(@RequestHeader("X-User-Id") UUID authUserId){
         return ResponseEntity.ok(userService.getProfileStatus(authUserId));
     }
+    @GetMapping("/{authUserId}/passenger-profile")
+    public ResponseEntity<PassengerProfileDto> getPassengerProfile(
+            @PathVariable UUID authUserId) {
+
+        return ResponseEntity.ok(
+                userService.getPassengerProfile(authUserId)
+        );
+    }
 }
