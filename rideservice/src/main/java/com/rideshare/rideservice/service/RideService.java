@@ -1,6 +1,7 @@
 package com.rideshare.rideservice.service;
 
 import com.rideshare.rideservice.dto.CreateRideDto;
+import com.rideshare.rideservice.dto.LiveRideResponseDto;
 import com.rideshare.rideservice.dto.RideResponseDto;
 import com.rideshare.rideservice.dto.UpdateRideDto;
 
@@ -26,5 +27,6 @@ public interface RideService {
 
     RideResponseDto completeRide(UUID authUserId);
     boolean hasActiveRide(UUID authUserId);
+    LiveRideResponseDto getLiveRide(Integer rideId);
 
 }

@@ -19,6 +19,7 @@ public class PassengerProfileDto {
 
     private String lastName;
 
-    private String profilePictureUrl;
+    private String phoneNumber;
 
+    private String profilePictureUrl;
 }

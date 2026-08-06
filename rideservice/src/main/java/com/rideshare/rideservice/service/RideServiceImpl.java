@@ -1,14 +1,18 @@
 package com.rideshare.rideservice.service;
 
-import com.rideshare.rideservice.dto.CreateRideDto;
-import com.rideshare.rideservice.dto.RideResponseDto;
-import com.rideshare.rideservice.dto.UpdateRideDto;
+import com.rideshare.rideservice.dto.*;
 import com.rideshare.rideservice.entity.Ride;
+import com.rideshare.rideservice.entity.RideRequest;
+import com.rideshare.rideservice.enums.RideRequestStatus;
 import com.rideshare.rideservice.enums.RideStatus;
 import com.rideshare.rideservice.exception.InvalidRideException;
 import com.rideshare.rideservice.exception.RideAlreadyExistsException;
 import com.rideshare.rideservice.exception.RideNotFoundException;
+import com.rideshare.rideservice.exception.RideRequestNotFoundException;
+import com.rideshare.rideservice.feign.UserServiceClient;
 import com.rideshare.rideservice.repository.RideRepository;
+import com.rideshare.rideservice.repository.RideRequestRepository;
+import com.rideshare.rideservice.websocket.RideEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -22,6 +26,9 @@ import java.util.UUID;
 public class RideServiceImpl implements RideService{
     private final RideRepository rideRepository;
     private final ModelMapper modelMapper;
+    private final RideRequestRepository rideRequestRepository;
+    private final RideEventPublisher rideEventPublisher;
+    private final UserServiceClient userServiceClient;
 
     @Override
     public RideResponseDto publishRide(CreateRideDto rideRequestDto, UUID authUserId) {
@@ -131,6 +138,22 @@ public class RideServiceImpl implements RideService{
         ride.setStartedAt(LocalDateTime.now());
 
         Ride updatedRide = rideRepository.save(ride);
+        RideRequest acceptedRequest =
+                rideRequestRepository
+                        .findByRideIdAndStatus(
+                                updatedRide.getRideId(),
+                                RideRequestStatus.ACCEPTED
+                        )
+                        .stream()
+                        .findFirst()
+                        .orElseThrow(() ->
+                                new RideRequestNotFoundException(
+                                        "Accepted ride request not found."));
+        rideEventPublisher.publishRideStarted(
+                updatedRide.getDriverAuthUserId(),
+                acceptedRequest.getPassengerAuthUserId(),
+                updatedRide.getRideId()
+        );
 
         return modelMapper.map(updatedRide,RideResponseDto.class);
     }
@@ -153,5 +176,82 @@ public class RideServiceImpl implements RideService{
     @Override
     public boolean hasActiveRide(UUID authUserId){
         return rideRepository.existsByDriverAuthUserIdAndStatusIn(authUserId,List.of(RideStatus.AVAILABLE,RideStatus.BOOKED));
+    }
+
+    @Override
+    public LiveRideResponseDto getLiveRide(Integer rideId) {
+
+        Ride ride = rideRepository.findById(rideId)
+                .orElseThrow(() ->
+                        new RideNotFoundException("Ride not found."));
+
+        RideRequest acceptedRequest =
+                rideRequestRepository
+                        .findByRideIdAndStatus(
+                                rideId,
+                                RideRequestStatus.ACCEPTED
+                        )
+                        .stream()
+                        .findFirst()
+                        .orElseThrow(() ->
+                                new RideRequestNotFoundException(
+                                        "Accepted ride request not found."
+                                ));
+
+        UserSummaryDto driver =
+                userServiceClient
+                        .getUserSummaries(
+                                List.of(ride.getDriverAuthUserId()))
+                        .get(0);
+        System.out.println(driver.getPhoneNumber() + " phone number  ---------------------------------------------------------------------------");
+
+        PassengerProfileDto passenger =
+                userServiceClient.getPassengerProfile(
+                        acceptedRequest.getPassengerAuthUserId());
+
+        return LiveRideResponseDto.builder()
+
+                // Ride
+                .rideId(ride.getRideId())
+                .rideStatus(ride.getStatus())
+
+                .source(ride.getSource())
+                .destination(ride.getDestination())
+
+                .riderEncodedPolyline(
+                        ride.getEncodedPolyline())
+
+                .passengerEncodedPolyline(
+                        acceptedRequest.getPassengerEncodedPolyline())
+
+                // Driver
+                .driverAuthUserId(
+                        ride.getDriverAuthUserId())
+
+                .driverName(
+                        driver.getFirstName() + " " +
+                                driver.getLastName())
+
+                .driverPhoneNumber(
+                        driver.getPhoneNumber())
+
+                .driverProfilePicture(
+                        driver.getProfilePictureUrl())
+
+                // Passenger
+                .passengerAuthUserId(
+                        acceptedRequest.getPassengerAuthUserId())
+
+                .passengerName(
+                        passenger.getFirstName() + " " +
+                                passenger.getLastName())
+
+                .passengerPhoneNumber(
+                        passenger.getPhoneNumber())
+
+                .passengerProfilePicture(
+                        passenger.getProfilePictureUrl())
+
+                .build();
     }
 }

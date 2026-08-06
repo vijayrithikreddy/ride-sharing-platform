@@ -1,6 +1,7 @@
 package com.rideshare.rideservice.controller;
 
 import com.rideshare.rideservice.dto.CreateRideRequestDto;
+import com.rideshare.rideservice.dto.RequestRideResponseDto;
 import com.rideshare.rideservice.dto.RideRequestResponseDto;
 import com.rideshare.rideservice.service.RideRequestService;
 import lombok.RequiredArgsConstructor;
@@ -67,5 +68,9 @@ public class RideRequestController {
 
         return ResponseEntity.ok(rideRequestService.getRideRequests(driverAuthUserId));
     }
+   @GetMapping("/myactiverequests")
+    public ResponseEntity<List<RequestRideResponseDto>> getMyActiveRideRequests(@RequestHeader("X-User-Id") UUID passengerAuthId){
+        return ResponseEntity.ok(rideRequestService.getMyActiveRequests(passengerAuthId));
+   }
 
 }
