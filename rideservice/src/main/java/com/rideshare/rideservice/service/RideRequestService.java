@@ -1,6 +1,7 @@
 package com.rideshare.rideservice.service;
 
 import com.rideshare.rideservice.dto.CreateRideRequestDto;
+import com.rideshare.rideservice.dto.RequestRideResponseDto;
 import com.rideshare.rideservice.dto.RideRequestResponseDto;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public interface RideRequestService {
     void cancelRideRequest(Integer requestId, UUID passengerAuthUserId);
 
     List<RideRequestResponseDto> getMyRideRequests(UUID passengerAuthUserId);
+    List<RequestRideResponseDto> getMyActiveRequests(UUID passengerAuthUserId);
 
     List<RideRequestResponseDto> getRideRequests(UUID driverAuthUserId);
 }

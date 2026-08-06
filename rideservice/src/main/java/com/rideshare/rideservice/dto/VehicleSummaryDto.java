@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class VehicleSummaryDto {
 
     private VehicleType vehicleType;
-
+    private String vehicleNumber;
     private String brand;
 
     private String model;

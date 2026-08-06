@@ -1,5 +1,6 @@
 package com.rideshare.rideservice.websocket;
 
+import com.rideshare.rideservice.dto.RequestRideResponseDto;
 import com.rideshare.rideservice.dto.RideRequestResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -25,6 +26,45 @@ public class RideEventPublisher {
 
         messagingTemplate.convertAndSend(
                 "/topic/rides/" + rideId + "/requests",
+                event
+        );
+    }
+
+    public void publishRideRequestUpdate(
+            UUID passengerAuthUserId,
+            RequestRideResponseDto dto,
+            String eventType) {
+
+        SocketEvent<RequestRideResponseDto> event =
+                new SocketEvent<>(
+                        eventType,
+                        dto
+                );
+
+        messagingTemplate.convertAndSend(
+                "/topic/passenger/" + passengerAuthUserId,
+                event
+        );
+    }
+
+    public void publishRideStarted(
+            UUID driverAuthUserId,
+            UUID passengerAuthUserId,
+            Integer rideId) {
+
+        SocketEvent<Integer> event =
+                new SocketEvent<>(
+                        "RIDE_STARTED",
+                        rideId
+                );
+
+        messagingTemplate.convertAndSend(
+                "/topic/driver/" + driverAuthUserId,
+                event
+        );
+
+        messagingTemplate.convertAndSend(
+                "/topic/passenger/" + passengerAuthUserId,
                 event
         );
     }

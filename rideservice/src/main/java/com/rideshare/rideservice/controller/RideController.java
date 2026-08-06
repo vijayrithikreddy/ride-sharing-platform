@@ -79,4 +79,12 @@ public class RideController {
         return ResponseEntity.ok(routeMatchingService.findMatchingRides(searchRideRequestDto));
 
     }
+    @GetMapping("/live/{rideId}")
+    public ResponseEntity<LiveRideResponseDto> getLiveRide(
+            @PathVariable Integer rideId) {
+
+        return ResponseEntity.ok(
+                rideService.getLiveRide(rideId)
+        );
+    }
 }

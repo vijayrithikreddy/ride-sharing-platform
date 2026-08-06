@@ -1,8 +1,6 @@
 package com.rideshare.rideservice.service;
 
-import com.rideshare.rideservice.dto.CreateRideRequestDto;
-import com.rideshare.rideservice.dto.PassengerProfileDto;
-import com.rideshare.rideservice.dto.RideRequestResponseDto;
+import com.rideshare.rideservice.dto.*;
 import com.rideshare.rideservice.entity.Ride;
 import com.rideshare.rideservice.entity.RideRequest;
 import com.rideshare.rideservice.enums.RideRequestStatus;
@@ -15,12 +13,17 @@ import com.rideshare.rideservice.repository.RideRequestRepository;
 import com.rideshare.rideservice.websocket.RideEventPublisher;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RideRequestServiceImpl implements RideRequestService{
@@ -46,7 +49,7 @@ public class RideRequestServiceImpl implements RideRequestService{
         }
 
         if (rideRequestRepository.existsByRideIdAndPassengerAuthUserId(request.getRideId(), passengerAuthUserId)) {
-            throw new RideRequestAlreadyExistsException("Ride request already exists.");
+            throw new RideRequestAlreadyExistsException("Request request already exists.");
         }
 
         RideRequest rideRequest = RideRequest.builder()
@@ -97,33 +100,49 @@ public class RideRequestServiceImpl implements RideRequestService{
         return response;
     }
 
+
     @Override
     @Transactional
     public RideRequestResponseDto acceptRideRequest(Integer requestId, UUID driverAuthUserId) {
 
         RideRequest rideRequest = rideRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RideRequestNotFoundException("Ride request not found."));
+                .orElseThrow(() ->
+                        new RideRequestNotFoundException("Ride request not found."));
 
         Ride ride = rideRepository.findById(rideRequest.getRideId())
-                .orElseThrow(() -> new RideNotFoundException("Ride not found."));
+                .orElseThrow(() ->
+                        new RideNotFoundException("Ride not found."));
 
-        if (!ride.getDriverAuthUserId().equals(driverAuthUserId))
-            throw new UnauthorizedRideAccessException("You are not allowed to accept this request.");
+        if (!ride.getDriverAuthUserId().equals(driverAuthUserId)) {
+            throw new UnauthorizedRideAccessException(
+                    "You are not allowed to accept this request.");
+        }
 
-        if (ride.getStatus() != RideStatus.AVAILABLE)
-            throw new RideNotAvailableException("Ride is no longer available.");
+        if (ride.getStatus() != RideStatus.AVAILABLE) {
+            throw new RideNotAvailableException(
+                    "Ride is no longer available.");
+        }
 
-        if (rideRequest.getStatus() != RideRequestStatus.PENDING)
-            throw new InvalidRideRequestStateException("Only pending requests can be accepted.");
+        if (rideRequest.getStatus() != RideRequestStatus.PENDING) {
+            throw new InvalidRideRequestStateException(
+                    "Only pending requests can be accepted.");
+        }
 
+        // Accept selected request
         rideRequest.setStatus(RideRequestStatus.ACCEPTED);
         ride.setStatus(RideStatus.BOOKED);
 
-        rideRepository.save(ride);
-        rideRequestRepository.save(rideRequest);
+        Ride savedRide = rideRepository.save(ride);
+
+        RideRequest savedRideRequest =
+                rideRequestRepository.save(rideRequest);
 
         // Reject all other pending requests
-        List<RideRequest> pendingRequests = rideRequestRepository.findByRideIdAndStatus(ride.getRideId(), RideRequestStatus.PENDING);
+        List<RideRequest> pendingRequests =
+                rideRequestRepository.findByRideIdAndStatus(
+                        savedRide.getRideId(),
+                        RideRequestStatus.PENDING
+                );
 
         for (RideRequest request : pendingRequests) {
             request.setStatus(RideRequestStatus.REJECTED);
@@ -131,7 +150,31 @@ public class RideRequestServiceImpl implements RideRequestService{
 
         rideRequestRepository.saveAll(pendingRequests);
 
-        return modelMapper.map(rideRequest, RideRequestResponseDto.class);
+        // Fetch driver details
+        UserSummaryDto driver = userServiceClient
+                        .getUserSummaries(List.of(driverAuthUserId))
+                        .get(0);
+        System.out.println(driver.getPhoneNumber());
+
+        // Build passenger response
+        RequestRideResponseDto response =
+                buildRequestRideResponseDto(
+                        savedRideRequest,
+                        savedRide,
+                        driver
+                );
+
+        // Notify passenger
+        rideEventPublisher.publishRideRequestUpdate(
+                savedRideRequest.getPassengerAuthUserId(),
+                response,
+                "REQUEST_ACCEPTED"
+        );
+
+        return modelMapper.map(
+                savedRideRequest,
+                RideRequestResponseDto.class
+        );
     }
 
     @Override
@@ -188,20 +231,117 @@ public class RideRequestServiceImpl implements RideRequestService{
                 .toList();
     }
 
+    public List<RequestRideResponseDto> getMyActiveRequests(UUID passengerAuthUserId) {
+
+        List<RideRequest> requests = rideRequestRepository
+                .findByPassengerAuthUserIdAndStatusIn(
+                        passengerAuthUserId,
+                        List.of(
+                                RideRequestStatus.PENDING,
+                                RideRequestStatus.ACCEPTED
+                        )
+                );
+
+        if (requests.isEmpty()) {
+            return List.of();
+        }
+
+        // Fetch all rides
+        List<Integer> rideIds = requests.stream()
+                .map(RideRequest::getRideId)
+                .toList();
+
+        List<Ride> rides = rideRepository.findAllById(rideIds);
+
+        Map<Integer, Ride> rideMap = rides.stream()
+                .collect(Collectors.toMap(
+                        Ride::getRideId,
+                        Function.identity()
+                ));
+
+        // Fetch all rider profiles in one Feign call
+        List<UUID> riderIds = rides.stream()
+                .map(Ride::getDriverAuthUserId)
+                .distinct()
+                .toList();
+
+        List<UserSummaryDto> users =
+                userServiceClient.getUserSummaries(riderIds);
+
+        Map<UUID, UserSummaryDto> userMap = users.stream()
+                .collect(Collectors.toMap(
+                        UserSummaryDto::getAuthUserId,
+                        Function.identity()
+                ));
+
+
+        return requests.stream()
+                .map(request -> {
+
+                    Ride ride = rideMap.get(request.getRideId());
+
+                    UserSummaryDto driver =
+                            userMap.get(ride.getDriverAuthUserId());
+
+                    return buildRequestRideResponseDto(
+                            request,
+                            ride,
+                            driver
+                    );
+                })
+                .toList();
+    }
+    private RequestRideResponseDto buildRequestRideResponseDto(
+            RideRequest request,
+            Ride ride,
+            UserSummaryDto driver) {
+
+        return RequestRideResponseDto.builder()
+
+                // Request
+                .requestId(request.getRequestId())
+                .status(request.getStatus())
+                .requestedAt(request.getRequestedAt())
+                .matchPercentage(request.getMatchPercentage())
+
+                // Ride
+                .rideId(ride.getRideId())
+                .rideStatus(ride.getStatus())
+                .driverAuthUserId(ride.getDriverAuthUserId())
+                .source(ride.getSource())
+                .destination(ride.getDestination())
+                .departureTime(ride.getDepartureTime())
+                .ridePrice(ride.getRidePrice())
+                .riderEncodedPolyline(ride.getEncodedPolyline())
+                .passengerEncodedPolyline(request.getPassengerEncodedPolyline())
+
+                // Driver
+                .driverName(driver.getFirstName() + " " + driver.getLastName())
+                .driverPhoneNumber(driver.getPhoneNumber())
+                .driverProfilePicture(driver.getProfilePictureUrl())
+
+                // Vehicle
+                .vehicleNumber(driver.getVehicle() != null ? driver.getVehicle().getVehicleNumber() : null)
+                .vehicleModel(driver.getVehicle() != null ? driver.getVehicle().getModel() : null)
+                .vehicleColor(
+                        driver.getVehicle() != null
+                                ? driver.getVehicle().getColor()
+                                : null
+                )
+
+                .build();
+    }
+
     @Override
     public List<RideRequestResponseDto> getRideRequests(UUID driverAuthUserId) {
 
         Ride ride = rideRepository.findByDriverAuthUserIdAndStatus(driverAuthUserId, RideStatus.AVAILABLE)
-                .orElseThrow(() ->
-                        new RideNotFoundException("No active ride found."));
+                .orElseThrow(() -> new RideNotFoundException("No active ride found."));
 
         return rideRequestRepository
-                .findByRideIdAndStatus(
-                        ride.getRideId(),
-                        RideRequestStatus.PENDING)
+                .findByRideIdAndStatus(ride.getRideId(),RideRequestStatus.PENDING)
                 .stream()
-                .map(request ->
-                        modelMapper.map(request, RideRequestResponseDto.class))
+                .map(request -> modelMapper.map(request, RideRequestResponseDto.class))
                 .toList();
     }
 }
