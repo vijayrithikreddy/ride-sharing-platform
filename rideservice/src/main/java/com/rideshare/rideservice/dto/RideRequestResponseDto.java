@@ -26,7 +26,6 @@ public class RideRequestResponseDto {
     private LocationDto destination;
 
     private LocalDateTime departureTime;
-
     private Double matchPercentage;
 
     private Double ridePrice;
