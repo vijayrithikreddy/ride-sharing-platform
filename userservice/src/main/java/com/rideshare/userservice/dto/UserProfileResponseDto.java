@@ -19,6 +19,7 @@ public class UserProfileResponseDto {
     private String firstName;
 
     private String lastName;
+    private String email;
 
     private String phoneNumber;
 
@@ -34,6 +35,5 @@ public class UserProfileResponseDto {
     private UserMode userMode;
 
     private String bio;
-
-    private boolean profileCompleted;
+    private VehicleResponseDto vehicle;
 }

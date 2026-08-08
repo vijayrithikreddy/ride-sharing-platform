@@ -22,6 +22,7 @@ public class UserProfile {
 
     @Column(nullable = false,unique = true, updatable = false)
     private UUID authUserId;
+    private String email;
 
     private String firstName;
 

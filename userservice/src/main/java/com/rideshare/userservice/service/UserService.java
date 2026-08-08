@@ -13,4 +13,6 @@ public interface UserService {
     UserProfileResponseDto updateUserMode(UUID authUserId, UpdateUserModeRequestDto request);
     boolean getProfileStatus(UUID authUserId);
     PassengerProfileDto getPassengerProfile(UUID authUserId);
+    UserProfileResponseDto getProfile(UUID authUserId);
+
 }

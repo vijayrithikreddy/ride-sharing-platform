@@ -32,6 +32,7 @@ public class LoggingFilter implements GlobalFilter, Ordered {
                         .getHeaders()
                         .getHost()
         );
+        log.info("Incoming Path: {}", exchange.getRequest().getURI().getPath());
         return chain.filter(exchange);
     }
 
