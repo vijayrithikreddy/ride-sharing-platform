@@ -1,6 +1,7 @@
 package com.rideshare.rideservice.service;
 
 import com.rideshare.rideservice.dto.CreateRideRequestDto;
+import com.rideshare.rideservice.dto.PassengerRideHistoryDto;
 import com.rideshare.rideservice.dto.RequestRideResponseDto;
 import com.rideshare.rideservice.dto.RideRequestResponseDto;
 
@@ -20,4 +21,5 @@ public interface RideRequestService {
     List<RequestRideResponseDto> getMyActiveRequests(UUID passengerAuthUserId);
 
     List<RideRequestResponseDto> getRideRequests(UUID driverAuthUserId);
+    List<PassengerRideHistoryDto> getPassengerRideHistory(UUID passengerAuthUserId);
 }

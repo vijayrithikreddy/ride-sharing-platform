@@ -98,4 +98,36 @@ public class AuthServiceImpl implements AuthService{
 
         return otp.toString();
     }
+    @Override
+    public RefreshTokenResponseDto refreshAccessToken(
+            RefreshTokenRequestDto request) {
+
+        String refreshToken = request.getRefreshToken();
+
+        if (!jwtUtil.validateToken(refreshToken)) {
+
+            throw new InvalidTokenException(
+                    "Refresh token has expired."
+            );
+
+        }
+
+        String email =
+                jwtUtil.retrieveEmailFromToken(refreshToken);
+
+        AuthUser user =
+                authRepository.findByEmail(email)
+                        .orElseThrow(() ->
+                                new UserNotFoundException(
+                                        "User not found."
+                                ));
+
+        String newAccessToken =
+                jwtUtil.generateAccessToken(user);
+
+        return RefreshTokenResponseDto.builder()
+                .accessToken(newAccessToken)
+                .build();
+
+    }
 }

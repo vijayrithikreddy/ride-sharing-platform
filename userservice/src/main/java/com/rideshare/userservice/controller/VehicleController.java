@@ -20,27 +20,27 @@ public class VehicleController {
 
     private final VehicleService vehicleService;
 
-    @PostMapping("/{authUserId}")
+    @PostMapping("/me")
     public ResponseEntity<VehicleResponseDto> addVehicle(
-            @PathVariable UUID authUserId,
+            @RequestHeader("X-User-Id") UUID authUserId,
             @Valid @RequestBody CreateVehicleRequestDto request) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(vehicleService.addVehicle(request, authUserId));
     }
 
-    @GetMapping("/{authUserId}")
+    @GetMapping("/me")
     public ResponseEntity<VehicleResponseDto> getMyVehicle(
-            @PathVariable UUID authUserId) {
+            @RequestHeader("X-User-Id") UUID authUserId) {
 
         return ResponseEntity.ok(
                 vehicleService.getVehicleById(authUserId)
         );
     }
 
-    @PutMapping("/{authUserId}")
+    @PutMapping("/me")
     public ResponseEntity<VehicleResponseDto> updateVehicle(
-            @PathVariable UUID authUserId,
+            @RequestHeader("X-User-Id") UUID authUserId,
             @Valid @RequestBody UpdateVehicleRequestDto request) {
 
         return ResponseEntity.ok(
@@ -48,9 +48,9 @@ public class VehicleController {
         );
     }
 
-    @DeleteMapping("/{authUserId}")
+    @DeleteMapping("/me")
     public ResponseEntity<Void> deleteVehicle(
-            @PathVariable UUID authUserId) {
+            @RequestHeader("X-User-Id") UUID authUserId) {
 
         vehicleService.deleteVehicle(authUserId);
 

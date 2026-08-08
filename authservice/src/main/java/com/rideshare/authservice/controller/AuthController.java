@@ -1,10 +1,8 @@
 package com.rideshare.authservice.controller;
 
-import com.rideshare.authservice.dto.LoginRequestDto;
-import com.rideshare.authservice.dto.LoginResponseDto;
-import com.rideshare.authservice.dto.SignUpRequestDto;
-import com.rideshare.authservice.dto.SignUpResponseDto;
+import com.rideshare.authservice.dto.*;
 import com.rideshare.authservice.service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,5 +28,13 @@ public class AuthController {
     @PostMapping("/verifyOtp")
     ResponseEntity<SignUpResponseDto> verifyUser(@RequestParam String email, String otp){
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.verifyUser(email,otp));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<RefreshTokenResponseDto> refreshToken(
+            @RequestBody @Valid RefreshTokenRequestDto request) {
+
+        return ResponseEntity.ok(authService.refreshAccessToken(request));
+
     }
 }
