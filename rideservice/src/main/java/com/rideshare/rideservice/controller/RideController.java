@@ -57,7 +57,7 @@ public class RideController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<List<RideResponseDto>> getRideHistory(
+    public ResponseEntity<List<RideHistoryDto>> getRideHistory(
             @RequestHeader("X-User-Id") UUID authUserId) {
 
         return ResponseEntity.ok(rideService.getRideHistory(authUserId));
@@ -86,5 +86,32 @@ public class RideController {
         return ResponseEntity.ok(
                 rideService.getLiveRide(rideId)
         );
+    }
+    @PostMapping("/location")
+    public ResponseEntity<Void> updateDriverLocation(
+            @RequestBody LiveLocationDto dto,
+            @RequestHeader("X-User-Id") UUID authUserId
+    ) {
+
+        rideService.updateDriverLocation(
+                dto,
+                authUserId
+        );
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/passenger/location")
+    public ResponseEntity<Void> updatePassengerLocation(
+            @RequestBody LiveLocationDto dto,
+            @RequestHeader("X-User-Id") UUID authUserId
+    ) {
+
+        rideService.updatePassengerLocation(
+                dto,
+                authUserId
+        );
+
+        return ResponseEntity.ok().build();
     }
 }

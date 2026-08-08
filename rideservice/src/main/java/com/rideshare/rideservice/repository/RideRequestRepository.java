@@ -14,8 +14,11 @@ import java.util.UUID;
 @Repository
 public interface RideRequestRepository extends JpaRepository<RideRequest,Integer> {
     boolean existsByRideIdAndPassengerAuthUserId(Integer rideId,UUID passengerAuthUserId);
-    List<RideRequest> findByRideIdAndStatus(Integer rideId, RideRequestStatus status);
+    Optional<RideRequest> findByRideIdAndStatus(Integer rideId, RideRequestStatus status);
+    List<RideRequest> findAllByRideIdAndStatus(Integer rideId, RideRequestStatus status);
     List<RideRequest> findByPassengerAuthUserId(UUID passengerAuthUserId);
-
+    List<RideRequest> findAllByPassengerAuthUserIdAndStatus(UUID passengerAuthUserId, RideRequestStatus status);
     List<RideRequest> findByPassengerAuthUserIdAndStatusIn(UUID passengerAuthUserID, List<RideRequestStatus> rideRequestStatus);
+
+    Optional<RideRequest> findByPassengerAuthUserIdAndStatus(UUID passengerAuthUserId, RideRequestStatus rideRequestStatus);
 }

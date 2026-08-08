@@ -29,6 +29,7 @@ public class UserServiceImpl implements UserService {
             throw new ProfileAlreadyCreatedException("Profile already Created.");
         UserProfile userProfile = new UserProfile();
         userProfile.setAuthUserId(userProfileRequestDto.getAuthUserId());
+        userProfile.setEmail(userProfileRequestDto.getEmail());
         userProfileRepository.save(userProfile);
         return "Empty Profile Created";
     }
@@ -120,4 +121,29 @@ public class UserServiceImpl implements UserService {
         return modelMapper.map(profile, PassengerProfileDto.class);
     }
 
+    @Override
+    public UserProfileResponseDto getProfile(UUID authUserId) {
+
+        UserProfile profile = userProfileRepository
+                .findByAuthUserId(authUserId)
+                .orElseThrow(() ->
+                        new UserProfileNotFoundException("Profile not found."));
+
+        UserProfileResponseDto dto =
+                modelMapper.map(profile, UserProfileResponseDto.class);
+
+        if (profile.getVehicle() != null) {
+
+            dto.setVehicle(
+                    modelMapper.map(
+                            profile.getVehicle(),
+                            VehicleResponseDto.class
+                    )
+            );
+
+        }
+
+        return dto;
+
+    }
 }

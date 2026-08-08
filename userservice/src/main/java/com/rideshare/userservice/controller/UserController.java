@@ -71,4 +71,8 @@ public class UserController {
                 userService.getPassengerProfile(authUserId)
         );
     }
+    @GetMapping("/me")
+    public ResponseEntity<UserProfileResponseDto> getProfile(@RequestHeader("X-User-Id") UUID authUserId) {
+        return ResponseEntity.ok(userService.getProfile(authUserId));
+    }
 }

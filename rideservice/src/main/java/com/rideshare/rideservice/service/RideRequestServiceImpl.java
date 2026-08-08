@@ -139,7 +139,7 @@ public class RideRequestServiceImpl implements RideRequestService{
 
         // Reject all other pending requests
         List<RideRequest> pendingRequests =
-                rideRequestRepository.findByRideIdAndStatus(
+                rideRequestRepository.findAllByRideIdAndStatus(
                         savedRide.getRideId(),
                         RideRequestStatus.PENDING
                 );
@@ -335,13 +335,190 @@ public class RideRequestServiceImpl implements RideRequestService{
     @Override
     public List<RideRequestResponseDto> getRideRequests(UUID driverAuthUserId) {
 
-        Ride ride = rideRepository.findByDriverAuthUserIdAndStatus(driverAuthUserId, RideStatus.AVAILABLE)
-                .orElseThrow(() -> new RideNotFoundException("No active ride found."));
+        Ride ride = rideRepository
+                .findByDriverAuthUserIdAndStatus(
+                        driverAuthUserId,
+                        RideStatus.AVAILABLE
+                )
+                .orElseThrow(() ->
+                        new RideNotFoundException(
+                                "No active ride found."
+                        ));
 
         return rideRequestRepository
-                .findByRideIdAndStatus(ride.getRideId(),RideRequestStatus.PENDING)
+                .findAllByRideIdAndStatus(
+                        ride.getRideId(),
+                        RideRequestStatus.PENDING
+                )
                 .stream()
-                .map(request -> modelMapper.map(request, RideRequestResponseDto.class))
+                .map(request -> {
+
+                    RideRequestResponseDto dto =
+                            modelMapper.map(
+                                    request,
+                                    RideRequestResponseDto.class
+                            );
+
+                    PassengerProfileDto passenger =
+                            userServiceClient.getPassengerProfile(
+                                    request.getPassengerAuthUserId()
+                            );
+
+                    dto.setPassengerProfile(passenger);
+
+                    return dto;
+
+                })
+                .toList();
+    }
+    @Override
+    public List<PassengerRideHistoryDto> getPassengerRideHistory(
+            UUID passengerAuthUserId
+    ) {
+
+        System.out.println("Logged Passenger UUID = " + passengerAuthUserId);
+
+        List<RideRequest> requests =
+                rideRequestRepository.findAllByPassengerAuthUserIdAndStatus(
+                        passengerAuthUserId,
+                        RideRequestStatus.COMPLETED
+                );
+
+        System.out.println("Requests Found = " + requests.size());
+
+        if (requests.isEmpty()) {
+            return List.of();
+        }
+
+        // Fetch all rides
+        List<Integer> rideIds = requests.stream()
+                .map(RideRequest::getRideId)
+                .toList();
+
+        List<Ride> rides =
+                rideRepository.findAllById(rideIds);
+
+        Map<Integer, Ride> rideMap = rides.stream()
+                .filter(ride -> ride.getStatus() == RideStatus.COMPLETED)
+                .collect(Collectors.toMap(
+                        Ride::getRideId,
+                        Function.identity()
+                ));
+
+        if (rideMap.isEmpty()) {
+            return List.of();
+        }
+
+        // Fetch all driver profiles in one Feign call
+        List<UUID> driverIds = rideMap.values().stream()
+                .map(Ride::getDriverAuthUserId)
+                .distinct()
+                .toList();
+
+        List<UserSummaryDto> drivers =
+                userServiceClient.getUserSummaries(driverIds);
+
+        Map<UUID, UserSummaryDto> driverMap =
+                drivers.stream()
+                        .collect(Collectors.toMap(
+                                UserSummaryDto::getAuthUserId,
+                                Function.identity()
+                        ));
+
+        return requests.stream()
+
+                .filter(request ->
+                        rideMap.containsKey(request.getRideId())
+                )
+
+                .map(request -> {
+
+                    Ride ride =
+                            rideMap.get(request.getRideId());
+
+                    UserSummaryDto driver =
+                            driverMap.get(
+                                    ride.getDriverAuthUserId()
+                            );
+
+                    return PassengerRideHistoryDto.builder()
+
+                            .requestId(
+                                    request.getRequestId()
+                            )
+
+                            .rideId(
+                                    ride.getRideId()
+                            )
+
+                            // Driver
+
+                            .driverName(
+                                    driver.getFirstName()
+                                            + " "
+                                            + driver.getLastName()
+                            )
+
+                            .driverPhoneNumber(
+                                    driver.getPhoneNumber()
+                            )
+
+                            .driverProfilePicture(
+                                    driver.getProfilePictureUrl()
+                            )
+
+                            // Vehicle
+
+                            .vehicleModel(
+                                    driver.getVehicle() != null
+                                            ? driver.getVehicle().getModel()
+                                            : null
+                            )
+
+                            .vehicleNumber(
+                                    driver.getVehicle() != null
+                                            ? driver.getVehicle().getVehicleNumber()
+                                            : null
+                            )
+
+                            .vehicleColor(
+                                    driver.getVehicle() != null
+                                            ? driver.getVehicle().getColor()
+                                            : null
+                            )
+
+                            // Route
+
+                            .source(
+                                    ride.getSource()
+                            )
+
+                            .destination(
+                                    ride.getDestination()
+                            )
+
+                            // Ride
+
+                            .ridePrice(
+                                    ride.getRidePrice()
+                            )
+
+                            .startedAt(
+                                    ride.getStartedAt()
+                            )
+
+                            .completedAt(
+                                    ride.getCompletedAt()
+                            )
+
+                            .rideStatus(
+                                    ride.getStatus()
+                            )
+
+                            .build();
+
+                })
+
                 .toList();
     }
 }
