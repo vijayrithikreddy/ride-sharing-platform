@@ -25,4 +25,6 @@ public class RideResponseDto {
     private Double price;
 
     private RideStatus status;
+
+    private PassengerProfileDto passengerProfile;
 }

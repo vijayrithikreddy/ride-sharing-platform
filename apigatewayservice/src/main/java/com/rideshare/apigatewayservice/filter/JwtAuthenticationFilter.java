@@ -31,7 +31,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             "/api/auth/verifyOtp",
             "/api/auth/resend-otp",
             "/api/auth/login",
-            "/api/auth/refresh-token",
+            "/api/auth/refresh",
 
             // API Documentation
             "/swagger-ui/**",

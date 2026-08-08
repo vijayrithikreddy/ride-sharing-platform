@@ -1,6 +1,7 @@
 package com.rideshare.rideservice.controller;
 
 import com.rideshare.rideservice.dto.CreateRideRequestDto;
+import com.rideshare.rideservice.dto.PassengerRideHistoryDto;
 import com.rideshare.rideservice.dto.RequestRideResponseDto;
 import com.rideshare.rideservice.dto.RideRequestResponseDto;
 import com.rideshare.rideservice.service.RideRequestService;
@@ -72,5 +73,13 @@ public class RideRequestController {
     public ResponseEntity<List<RequestRideResponseDto>> getMyActiveRideRequests(@RequestHeader("X-User-Id") UUID passengerAuthId){
         return ResponseEntity.ok(rideRequestService.getMyActiveRequests(passengerAuthId));
    }
+    @GetMapping("/history")
+    public ResponseEntity<List<PassengerRideHistoryDto>> getPassengerRideHistory(
+            @RequestHeader("X-User-Id") UUID passengerAuthUserId
+    ) {
+
+        return ResponseEntity.ok(rideRequestService.getPassengerRideHistory(passengerAuthUserId));
+
+    }
 
 }

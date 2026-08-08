@@ -13,6 +13,9 @@ import com.rideshare.rideservice.feign.UserServiceClient;
 import com.rideshare.rideservice.repository.RideRepository;
 import com.rideshare.rideservice.repository.RideRequestRepository;
 import com.rideshare.rideservice.websocket.RideEventPublisher;
+import com.rideshare.rideservice.websocket.RideLiveLocation;
+import com.rideshare.rideservice.websocket.RideLocationStore;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,8 @@ public class RideServiceImpl implements RideService{
     private final RideRequestRepository rideRequestRepository;
     private final RideEventPublisher rideEventPublisher;
     private final UserServiceClient userServiceClient;
+    private final RideLocationStore rideLocationStore;
+
 
     @Override
     public RideResponseDto publishRide(CreateRideDto rideRequestDto, UUID authUserId) {
@@ -103,26 +108,113 @@ public class RideServiceImpl implements RideService{
                                 RideStatus.AVAILABLE,
                                 RideStatus.BOOKED,
                                 RideStatus.STARTED
-                        ))
+                        )
+                )
                 .orElseThrow(() ->
                         new RideNotFoundException("No active ride found."));
 
-        return modelMapper.map(ride, RideResponseDto.class);
+        RideResponseDto response =
+                modelMapper.map(ride, RideResponseDto.class);
+
+        if (ride.getStatus() != RideStatus.AVAILABLE) {
+
+            RideRequest acceptedRequest =
+                    rideRequestRepository
+                            .findByRideIdAndStatus(
+                                    ride.getRideId(),
+                                    RideRequestStatus.ACCEPTED
+                            )
+                            .orElseThrow(() ->
+                                    new RideRequestNotFoundException(
+                                            "Accepted ride request not found."
+                                    ));
+
+            PassengerProfileDto passenger =
+                    userServiceClient.getPassengerProfile(
+                            acceptedRequest.getPassengerAuthUserId()
+                    );
+
+            response.setPassengerProfile(passenger);
+
+        }
+
+        return response;
     }
 
     @Override
-    public List<RideResponseDto> getRideHistory(UUID authUserId) {
+    public List<RideHistoryDto> getRideHistory(UUID authUserId) {
 
-        return rideRepository
-                .findByDriverAuthUserIdAndStatusIn(
+        List<Ride> rides = rideRepository
+                .findAllByDriverAuthUserIdAndStatusIn(
                         authUserId,
-                        List.of(
-                                RideStatus.COMPLETED,
-                                RideStatus.CANCELLED
-                        ))
-                .stream()
-                .map(ride ->
-                        modelMapper.map(ride, RideResponseDto.class))
+                        List.of(RideStatus.COMPLETED)
+                );
+
+        return rides.stream()
+                .map(ride -> {
+
+                    RideRequest acceptedRequest =
+                            rideRequestRepository
+                                    .findByRideIdAndStatus(
+                                            ride.getRideId(),
+                                            RideRequestStatus.COMPLETED
+                                    )
+                                    .orElseThrow(() ->
+                                            new RideRequestNotFoundException(
+                                                    "Completed ride request not found."
+                                            ));
+
+                    PassengerProfileDto passenger =
+                            userServiceClient.getPassengerProfile(
+                                    acceptedRequest.getPassengerAuthUserId()
+                            );
+
+                    return RideHistoryDto.builder()
+
+                            .rideId(
+                                    ride.getRideId()
+                            )
+
+                            .passengerName(
+                                    passenger.getFirstName() + " " +
+                                            passenger.getLastName()
+                            )
+
+                            .passengerPhoneNumber(
+                                    passenger.getPhoneNumber()
+                            )
+
+                            .passengerProfilePicture(
+                                    passenger.getProfilePictureUrl()
+                            )
+
+                            .source(
+                                    ride.getSource().getAddress()
+                            )
+
+                            .destination(
+                                    ride.getDestination().getAddress()
+                            )
+
+                            .ridePrice(
+                                    ride.getRidePrice()
+                            )
+
+                            .startedAt(
+                                    ride.getStartedAt()
+                            )
+
+                            .completedAt(
+                                    ride.getCompletedAt()
+                            )
+
+                            .status(
+                                    ride.getStatus()
+                            )
+
+                            .build();
+
+                })
                 .toList();
     }
 
@@ -159,20 +251,58 @@ public class RideServiceImpl implements RideService{
     }
 
     @Override
+    @Transactional
     public RideResponseDto completeRide(UUID authUserId) {
 
         Ride ride = rideRepository
-                .findByDriverAuthUserIdAndStatus(authUserId, RideStatus.STARTED)
+                .findByDriverAuthUserIdAndStatus(
+                        authUserId,
+                        RideStatus.STARTED
+                )
                 .orElseThrow(() ->
-                        new RideNotFoundException("No started ride found."));
+                        new RideNotFoundException(
+                                "No started ride found."
+                        ));
 
+        RideRequest rideRequest = rideRequestRepository
+                .findByRideIdAndStatus(
+                        ride.getRideId(),
+                        RideRequestStatus.ACCEPTED
+                )
+                .orElseThrow(() ->
+                        new RideRequestNotFoundException(
+                                "Accepted ride request not found."
+                        ));
+
+        // Complete ride
         ride.setStatus(RideStatus.COMPLETED);
         ride.setCompletedAt(LocalDateTime.now());
 
-        Ride updatedRide = rideRepository.save(ride);
+        // Complete ride request
+        rideRequest.setStatus(RideRequestStatus.COMPLETED);
 
-        return modelMapper.map(updatedRide, RideResponseDto.class);
+        // Persist both changes
+        Ride updatedRide = rideRepository.save(ride);
+        rideRequestRepository.save(rideRequest);
+
+        // Remove live location
+        rideLocationStore.remove(
+                ride.getRideId()
+        );
+
+        // Notify both users
+        rideEventPublisher.publishRideCompleted(
+                updatedRide.getDriverAuthUserId(),
+                rideRequest.getPassengerAuthUserId(),
+                updatedRide.getRideId()
+        );
+
+        return modelMapper.map(
+                updatedRide,
+                RideResponseDto.class
+        );
     }
+
     @Override
     public boolean hasActiveRide(UUID authUserId){
         return rideRepository.existsByDriverAuthUserIdAndStatusIn(authUserId,List.of(RideStatus.AVAILABLE,RideStatus.BOOKED));
@@ -254,4 +384,109 @@ public class RideServiceImpl implements RideService{
 
                 .build();
     }
+
+    @Override
+    public void updateDriverLocation(
+            LiveLocationDto dto,
+            UUID driverAuthUserId
+    ) {
+
+        Ride ride = rideRepository
+                .findByDriverAuthUserIdAndStatus(
+                        driverAuthUserId,
+                        RideStatus.STARTED
+                )
+                .orElseThrow(() ->
+                        new RideNotFoundException(
+                                "No active ride found."
+                        ));
+
+        dto.setRideId(ride.getRideId());
+
+        rideLocationStore.updateDriverLocation(
+                ride.getRideId(),
+                dto
+        );
+
+        RideLiveLocation liveLocation =
+                rideLocationStore.getLocation(
+                        ride.getRideId()
+                );
+
+        RideLiveLocationDto response =
+                RideLiveLocationDto.builder()
+                        .driverLocation(
+                                liveLocation.getDriverLocation()
+                        )
+                        .passengerLocation(
+                                liveLocation.getPassengerLocation()
+                        )
+                        .build();
+
+        rideEventPublisher.publishLiveLocation(
+                ride.getRideId(),
+                response
+        );
+    }
+   @Override
+    public void updatePassengerLocation(
+            LiveLocationDto dto,
+            UUID passengerAuthUserId
+    ) {
+       System.out.println("========== PASSENGER LOCATION ==========");
+       System.out.println("User : " + passengerAuthUserId);
+       System.out.println("Lat : " + dto.getLatitude());
+       System.out.println("Lng : " + dto.getLongitude());
+
+        RideRequest rideRequest = rideRequestRepository
+                .findByPassengerAuthUserIdAndStatus(
+                        passengerAuthUserId,
+                        RideRequestStatus.ACCEPTED
+                )
+                .orElseThrow(() ->
+                        new RideRequestNotFoundException(
+                                "No active ride request found."
+                        ));
+
+        Ride ride = rideRepository
+                .findById(rideRequest.getRideId())
+                .orElseThrow(() ->
+                        new RideNotFoundException(
+                                "Ride not found."
+                        ));
+
+        if (ride.getStatus() != RideStatus.STARTED) {
+            throw new InvalidRideException(
+                    "Ride has not started yet."
+            );
+        }
+
+        dto.setRideId(ride.getRideId());
+
+        rideLocationStore.updatePassengerLocation(
+                ride.getRideId(),
+                dto
+        );
+
+        RideLiveLocation liveLocation =
+                rideLocationStore.getLocation(
+                        ride.getRideId()
+                );
+
+        RideLiveLocationDto response =
+                RideLiveLocationDto.builder()
+                        .driverLocation(
+                                liveLocation.getDriverLocation()
+                        )
+                        .passengerLocation(
+                                liveLocation.getPassengerLocation()
+                        )
+                        .build();
+
+        rideEventPublisher.publishLiveLocation(
+                ride.getRideId(),
+                response
+        );
+    }
+
 }

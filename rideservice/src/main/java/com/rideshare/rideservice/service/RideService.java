@@ -1,9 +1,6 @@
 package com.rideshare.rideservice.service;
 
-import com.rideshare.rideservice.dto.CreateRideDto;
-import com.rideshare.rideservice.dto.LiveRideResponseDto;
-import com.rideshare.rideservice.dto.RideResponseDto;
-import com.rideshare.rideservice.dto.UpdateRideDto;
+import com.rideshare.rideservice.dto.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,7 +16,7 @@ public interface RideService {
             UUID authUserId
     );
 
-    List<RideResponseDto> getRideHistory(
+    List<RideHistoryDto> getRideHistory(
             UUID authUserId
     );
 
@@ -28,5 +25,7 @@ public interface RideService {
     RideResponseDto completeRide(UUID authUserId);
     boolean hasActiveRide(UUID authUserId);
     LiveRideResponseDto getLiveRide(Integer rideId);
+    void updateDriverLocation(LiveLocationDto dto, UUID driverAuthUserId);
+    void updatePassengerLocation(LiveLocationDto dto, UUID passengerAuthUserId);
 
 }
