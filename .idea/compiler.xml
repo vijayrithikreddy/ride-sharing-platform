@@ -9,11 +9,10 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
         </processorPath>
         <module name="userservice" />
       </profile>
-      <profile name="Annotation profile for rideservice" enabled="true">
+      <profile name="Annotation profile for notificationservice" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -23,6 +22,7 @@
         <module name="apigatewayservice" />
         <module name="rideservice" />
         <module name="authservice" />
+        <module name="notificationservice" />
         <module name="eurekaservice" />
       </profile>
     </annotationProcessing>
@@ -32,6 +32,7 @@
       <module name="apigatewayservice" options="-parameters" />
       <module name="authservice" options="-parameters" />
       <module name="eurekaservice" options="-parameters" />
+      <module name="notificationservice" options="-parameters" />
       <module name="rideservice" options="-parameters" />
       <module name="userservice" options="-parameters" />
     </option>

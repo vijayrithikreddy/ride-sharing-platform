@@ -2,6 +2,8 @@ package com.rideshare.authservice.service;
 
 import com.rideshare.authservice.dto.*;
 import com.rideshare.authservice.entity.AuthUser;
+import com.rideshare.authservice.event.OtpEventPublisher;
+import com.rideshare.authservice.event.OtpNotificationEvent;
 import com.rideshare.authservice.exception.*;
 import com.rideshare.authservice.feign.UserProfileClient;
 import com.rideshare.authservice.model.PendingUser;
@@ -28,6 +30,7 @@ public class AuthServiceImpl implements AuthService{
     private final JwtUtil jwtUtil;
     private final RedisTemplate<String,PendingUser> redisTemplate;
     private final UserProfileClient userProfileClient;
+    private final OtpEventPublisher otpEventPublisher;
 
     @Override
     public String signUp(SignUpRequestDto signUpRequestDto) {
@@ -47,7 +50,13 @@ public class AuthServiceImpl implements AuthService{
         redisTemplate.opsForValue().set("signup:" + user.getEmail(),user, Duration.ofMinutes(10));
         pendingUser =  redisTemplate.opsForValue().get("signup:" + signUpRequestDto.getEmail());
         log.info("{}: " + pendingUser);
-        //AuthUser savedUser = authRepository.save(user);
+        OtpNotificationEvent event =
+                OtpNotificationEvent.builder()
+                        .email(user.getEmail())
+                        .otp(user.getOtp())
+                        .build();
+
+        otpEventPublisher.publishOtp(event);
 
         return "Otp Sent";
     }
