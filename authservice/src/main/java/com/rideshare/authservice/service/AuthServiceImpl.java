@@ -89,6 +89,7 @@ public class AuthServiceImpl implements AuthService{
             AuthUser savedUser = authRepository.save(user);//return the id too
             CreateEmptyProfileRequestDto createEmptyProfileRequestDto = new CreateEmptyProfileRequestDto();
             createEmptyProfileRequestDto.setAuthUserId(savedUser.getId());
+            createEmptyProfileRequestDto.setEmail(savedUser.getEmail());
             redisTemplate.delete("signup:" + email);
             userProfileClient.createEmptyUserProfile(createEmptyProfileRequestDto);
             return modelMapper.map(savedUser,SignUpResponseDto.class);

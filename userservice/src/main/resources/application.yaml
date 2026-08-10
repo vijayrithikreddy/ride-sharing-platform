@@ -4,13 +4,13 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/rideshare?createDatabaseIfNotExist=true
+    url: jdbc:mysql://mysql:3306/rideshare?createDatabaseIfNotExist=true
     username: root
     password: root
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -23,14 +23,13 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: http://eureka-service:8761/eureka
     register-with-eureka: true
     fetch-registry: true
+
   instance:
     prefer-ip-address: true
 
-
-
 app:
   upload:
-    profile-picture-path: D:/ride-sharing-platform/userservice/uploads/profile-pictures
+    profile-picture-path: /app/uploads/profile-pictures

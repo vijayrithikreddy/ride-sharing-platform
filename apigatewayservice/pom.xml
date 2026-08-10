@@ -80,7 +80,7 @@
 	</dependencyManagement>
 
 	<build>
-		<finalName>api-gateway</finalName>
+		<finalName>api-gateway-service</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
