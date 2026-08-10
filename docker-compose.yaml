@@ -209,6 +209,10 @@ services:
     ports:
       - "8084:8084"
 
+    environment:
+      BREVO_USERNAME: ${BREVO_USERNAME}
+      BREVO_SMTP_KEY: ${BREVO_SMTP_KEY}
+
     depends_on:
       eureka-service:
         condition: service_started
