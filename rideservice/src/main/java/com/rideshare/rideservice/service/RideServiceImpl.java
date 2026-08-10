@@ -5,6 +5,7 @@ import com.rideshare.rideservice.entity.Ride;
 import com.rideshare.rideservice.entity.RideRequest;
 import com.rideshare.rideservice.enums.RideRequestStatus;
 import com.rideshare.rideservice.enums.RideStatus;
+import com.rideshare.rideservice.event.RideNotificationPublisher;
 import com.rideshare.rideservice.exception.InvalidRideException;
 import com.rideshare.rideservice.exception.RideAlreadyExistsException;
 import com.rideshare.rideservice.exception.RideNotFoundException;
@@ -31,6 +32,7 @@ public class RideServiceImpl implements RideService{
     private final ModelMapper modelMapper;
     private final RideRequestRepository rideRequestRepository;
     private final RideEventPublisher rideEventPublisher;
+    private final RideNotificationPublisher rideNotificationPublisher;
     private final UserServiceClient userServiceClient;
     private final RideLocationStore rideLocationStore;
 
@@ -246,6 +248,18 @@ public class RideServiceImpl implements RideService{
                 acceptedRequest.getPassengerAuthUserId(),
                 updatedRide.getRideId()
         );
+        UserSummaryDto driver =
+                userServiceClient
+                        .getUserSummaries(
+                                List.of(updatedRide.getDriverAuthUserId())
+                        )
+                        .get(0);
+
+        // Send email notification through RabbitMQ
+        rideNotificationPublisher.publishRideStarted(
+                driver.getEmail(),
+                Long.valueOf(updatedRide.getRideId())
+        );
 
         return modelMapper.map(updatedRide,RideResponseDto.class);
     }
@@ -295,6 +309,18 @@ public class RideServiceImpl implements RideService{
                 updatedRide.getDriverAuthUserId(),
                 rideRequest.getPassengerAuthUserId(),
                 updatedRide.getRideId()
+        );
+        UserSummaryDto driver =
+                userServiceClient
+                        .getUserSummaries(
+                                List.of(updatedRide.getDriverAuthUserId())
+                        )
+                        .get(0);
+
+        // Send email notification through RabbitMQ
+        rideNotificationPublisher.publishRideCompleted(
+                driver.getEmail(),
+                Long.valueOf(updatedRide.getRideId())
         );
 
         return modelMapper.map(

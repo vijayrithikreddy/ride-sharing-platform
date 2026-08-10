@@ -10,10 +10,12 @@ spring:
 
       globalcors:
         add-to-simple-url-handler-mapping: true
+
         cors-configurations:
           '[/**]':
             allowedOrigins:
               - "http://localhost:5173"
+
             allowedMethods:
               - GET
               - POST
@@ -21,9 +23,12 @@ spring:
               - PATCH
               - DELETE
               - OPTIONS
+
             allowedHeaders:
               - "*"
+
             allowCredentials: true
+
       routes:
         - id: auth-service
           uri: lb://AUTH-SERVICE
@@ -51,7 +56,8 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: http://eureka-service:8761/eureka
+
     register-with-eureka: true
     fetch-registry: true
 

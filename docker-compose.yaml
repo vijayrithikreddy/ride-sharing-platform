@@ -1,15 +1,257 @@
 services:
+
+  # =========================================================
+  # EUREKA SERVER
+  # =========================================================
+  eureka-service:
+    build:
+      context: ./eurekaservice
+      dockerfile: Dockerfile
+    container_name: rideshare-eureka
+
+    ports:
+      - "8761:8761"
+
+    networks:
+      - rideshare-network
+
+
+  # =========================================================
+  # MYSQL
+  # =========================================================
+  mysql:
+    image: mysql:8.4
+    container_name: rideshare-mysql
+
+    environment:
+      MYSQL_DATABASE: rideshare
+      MYSQL_ROOT_PASSWORD: root
+
+    ports:
+      - "3307:3306"
+
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-uroot",
+          "-proot"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+    networks:
+      - rideshare-network
+
+
+  # =========================================================
+  # RABBITMQ
+  # =========================================================
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rideshare-rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+
     environment:
       RABBITMQ_DEFAULT_USER: rideshare
       RABBITMQ_DEFAULT_PASS: rideshare123
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
 
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "rabbitmq-diagnostics",
+          "-q",
+          "ping"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+    networks:
+      - rideshare-network
+
+
+  # =========================================================
+  # REDIS
+  # =========================================================
+  redis:
+    image: redis:7
+    container_name: rideshare-redis
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis-data:/data
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "ping"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - rideshare-network
+
+
+  # =========================================================
+  # AUTH SERVICE
+  # =========================================================
+  auth-service:
+    build:
+      context: ./authservice
+      dockerfile: Dockerfile
+    container_name: rideshare-auth
+
+    ports:
+      - "8081:8081"
+
+    depends_on:
+      eureka-service:
+        condition: service_started
+
+      mysql:
+        condition: service_healthy
+
+      rabbitmq:
+        condition: service_healthy
+
+      redis:
+        condition: service_healthy
+
+    networks:
+      - rideshare-network
+
+
+  # =========================================================
+  # USER SERVICE
+  # =========================================================
+  user-service:
+    build:
+      context: ./userservice
+      dockerfile: Dockerfile
+    container_name: rideshare-user
+
+    ports:
+      - "8082:8082"
+
+    depends_on:
+      eureka-service:
+        condition: service_started
+
+      mysql:
+        condition: service_healthy
+
+    volumes:
+      - ./uploads/profile-pictures:/app/uploads/profile-pictures
+
+    networks:
+      - rideshare-network
+
+
+  # =========================================================
+  # RIDE SERVICE
+  # =========================================================
+  ride-service:
+    build:
+      context: ./rideservice
+      dockerfile: Dockerfile
+    container_name: rideshare-ride
+
+    ports:
+      - "8083:8083"
+
+    depends_on:
+      eureka-service:
+        condition: service_started
+
+      mysql:
+        condition: service_healthy
+
+      rabbitmq:
+        condition: service_healthy
+
+    networks:
+      - rideshare-network
+
+
+  # =========================================================
+  # NOTIFICATION SERVICE
+  # =========================================================
+  notification-service:
+    build:
+      context: ./notificationservice
+      dockerfile: Dockerfile
+    container_name: rideshare-notification
+
+    ports:
+      - "8084:8084"
+
+    depends_on:
+      eureka-service:
+        condition: service_started
+
+      rabbitmq:
+        condition: service_healthy
+
+    networks:
+      - rideshare-network
+
+
+  # =========================================================
+  # API GATEWAY
+  # =========================================================
+  api-gateway:
+    build:
+      context: ./apigatewayservice
+      dockerfile: Dockerfile
+    container_name: rideshare-api-gateway
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      eureka-service:
+        condition: service_started
+
+    networks:
+      - rideshare-network
+
+
+# =========================================================
+# NETWORK
+# =========================================================
+networks:
+  rideshare-network:
+    driver: bridge
+
+
+# =========================================================
+# PERSISTENT VOLUMES
+# =========================================================
 volumes:
-  rabbitmq_data:
+  mysql-data:
+  rabbitmq-data:
+  redis-data:

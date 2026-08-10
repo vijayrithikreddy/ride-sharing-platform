@@ -11,10 +11,9 @@ public class WebConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
 
         registry
-                .addResourceHandler("/uploads/**")
+                .addResourceHandler("/uploads/profile-pictures/**")
                 .addResourceLocations(
-                        "file:D:/ride-sharing-platform/userservice/uploads/"
+                        "file:/app/uploads/profile-pictures/"
                 );
-
     }
 }
