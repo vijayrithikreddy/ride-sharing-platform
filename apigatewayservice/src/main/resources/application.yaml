@@ -14,7 +14,7 @@ spring:
         cors-configurations:
           '[/**]':
             allowedOrigins:
-              - "http://localhost:5173"
+              - ${FRONTEND_URL:http://localhost:5173}
 
             allowedMethods:
               - GET
@@ -56,7 +56,7 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka-service:8761/eureka
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-service:8761/eureka}
 
     register-with-eureka: true
     fetch-registry: true
@@ -65,4 +65,4 @@ eureka:
     prefer-ip-address: true
 
 jwt:
-  secret: jwt-secret-code
+  secret: ${JWT_SECRET:jwt-secret-code}

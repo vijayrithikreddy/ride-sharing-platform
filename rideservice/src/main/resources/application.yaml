@@ -4,9 +4,9 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://mysql:3306/rideshare?createDatabaseIfNotExist=true
-    username: root
-    password: root
+    url: ${MYSQL_URL:jdbc:mysql://mysql:3306/rideshare?createDatabaseIfNotExist=true}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:root}
 
   jpa:
     hibernate:
@@ -18,10 +18,10 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
 
   rabbitmq:
-    host: rabbitmq
-    port: 5672
-    username: rideshare
-    password: rideshare123
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:rideshare}
+    password: ${RABBITMQ_PASSWORD:rideshare123}
 
 server:
   port: 8083
@@ -29,7 +29,8 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka-service:8761/eureka
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-service:8761/eureka}
+
     register-with-eureka: true
     fetch-registry: true
 
