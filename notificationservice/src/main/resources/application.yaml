@@ -3,16 +3,17 @@ spring:
     name: NOTIFICATION-SERVICE
 
   rabbitmq:
-    host: rabbitmq
-    port: 5672
-    username: rideshare
-    password: rideshare123
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:rideshare}
+    password: ${RABBITMQ_PASSWORD:rideshare123}
 
   mail:
-    host: smtp-relay.brevo.com
-    port: 587
+    host: ${MAIL_HOST:smtp-relay.brevo.com}
+    port: ${MAIL_PORT:587}
     username: ${BREVO_USERNAME}
     password: ${BREVO_SMTP_KEY}
+
     properties:
       mail:
         smtp:
@@ -26,7 +27,8 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka-service:8761/eureka
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-service:8761/eureka}
+
     register-with-eureka: true
     fetch-registry: true
 
