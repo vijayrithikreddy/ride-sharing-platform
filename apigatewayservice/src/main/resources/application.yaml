@@ -4,7 +4,6 @@ spring:
 
   cloud:
     gateway:
-
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
 
@@ -56,13 +55,16 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://eureka-service:8761/eureka}
-
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-service:8761/eureka/}
     register-with-eureka: true
     fetch-registry: true
 
   instance:
-    prefer-ip-address: true
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:ride-sharing-platform-api.onrender.com}
+    prefer-ip-address: false
+    secure-port-enabled: true
+    secure-port: 443
+    non-secure-port-enabled: false
 
 jwt:
   secret: ${JWT_SECRET:jwt-secret-code}

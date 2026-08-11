@@ -28,7 +28,11 @@ eureka:
     fetch-registry: true
 
   instance:
-    prefer-ip-address: true
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:ride-sharing-platform-user.onrender.com}
+    prefer-ip-address: false
+    secure-port-enabled: true
+    secure-port: 443
+    non-secure-port-enabled: false
 
 app:
   upload:

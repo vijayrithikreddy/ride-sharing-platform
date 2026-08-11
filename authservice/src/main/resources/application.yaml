@@ -24,12 +24,14 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
 
   rabbitmq:
     host: ${RABBITMQ_HOST:rabbitmq}
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:rideshare}
     password: ${RABBITMQ_PASSWORD:rideshare123}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST:/}
 
 server:
   port: ${PORT:8081}
@@ -43,13 +45,16 @@ jwt:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://eureka-service:8761/eureka}
-
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-service:8761/eureka/}
     register-with-eureka: true
     fetch-registry: true
 
   instance:
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:ride-sharing-platform-auth.onrender.com}
     prefer-ip-address: false
+    secure-port-enabled: true
+    secure-port: 443
+    non-secure-port-enabled: false
 
 logging:
   level:

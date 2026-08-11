@@ -22,6 +22,7 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:rideshare}
     password: ${RABBITMQ_PASSWORD:rideshare123}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST:/}
 
 server:
   port: ${PORT:8083}
@@ -29,10 +30,13 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://eureka-service:8761/eureka}
-
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-service:8761/eureka/}
     register-with-eureka: true
     fetch-registry: true
 
   instance:
-    prefer-ip-address: true
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:ride-sharing-platform-ride.onrender.com}
+    prefer-ip-address: false
+    secure-port-enabled: true
+    secure-port: 443
+    non-secure-port-enabled: false
